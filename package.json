@@ -1,6 +1,6 @@
 {
   "name": "@webywz/diff-vibe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Turn a git diff into a sharp PR title and markdown body. Offline-first, AI-optional.",
   "keywords": [
     "git",
@@ -24,7 +24,7 @@
   "author": "webywz",
   "type": "module",
   "bin": {
-    "diff-vibe": "./dist/cli.js"
+    "diff-vibe": "dist/cli.js"
   },
   "publishConfig": {
     "access": "public"
