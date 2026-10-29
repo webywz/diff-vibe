@@ -1,0 +1,143 @@
+#!/usr/bin/env node
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { copyToClipboard } from "./clipboard.ts";
+import { GitError, inspectDiff } from "./git.ts";
+import { helpText, parseArgs, UsageError } from "./parse-args.ts";
+import { proposePr } from "./propose.ts";
+import {
+  renderCopied,
+  renderError,
+  renderGhHint,
+  renderProposal,
+  renderVersion,
+  textOutput,
+} from "./render.ts";
+import { formatPr, suggestGhPrCreate } from "./format.ts";
+
+export async function main(argv = process.argv.slice(2)): Promise<number> {
+  let options;
+  try {
+    options = parseArgs(argv);
+  } catch (error) {
+    if (error instanceof UsageError) {
+      process.stderr.write(`${renderError(error.message)}\n\n${helpText()}`);
+      return 1;
+    }
+    throw error;
+  }
+
+  if (options.help) {
+    process.stdout.write(helpText());
+    return 0;
+  }
+  if (options.version) {
+    process.stdout.write(`${renderVersion(readVersion())}\n`);
+    return 0;
+  }
+
+  const piped = !process.stdout.isTTY;
+  try {
+    const inspected = inspectDiff(process.cwd(), options.base);
+    const proposal = await proposePr(inspected.diff, {
+      vibe: options.vibe,
+      preferAi: !options.noAi,
+    });
+    const mode = options.titleOnly
+      ? "title"
+      : options.bodyOnly
+        ? "body"
+        : "full";
+    const printable = options.json
+      ? `${JSON.stringify(
+          {
+            title: proposal.title,
+            body: proposal.body,
+            type: proposal.type,
+            scope: proposal.scope,
+            subject: proposal.subject,
+            summary: proposal.summary,
+            changes: proposal.changes,
+            testPlan: proposal.testPlan,
+            breaking: proposal.breaking,
+            engine: proposal.engine,
+            base: inspected.rangeLabel,
+          },
+          null,
+          2,
+        )}\n`
+      : piped || options.titleOnly || options.bodyOnly
+        ? textOutput(proposal, mode)
+        : renderProposal(inspected, proposal);
+
+    process.stdout.write(printable);
+
+    if (options.copy) {
+      const copied = copyToClipboard(
+        options.json
+          ? printable
+          : mode === "full"
+            ? `${formatPr(proposal)}\n`
+            : textOutput(proposal, mode),
+      );
+      if (!piped && !options.json) {
+        process.stdout.write(renderCopied(copied));
+      } else if (!copied) {
+        process.stderr.write(`${renderError("clipboard unavailable")}\n`);
+      }
+    }
+
+    if (options.open) {
+      if (piped || options.json || options.titleOnly || options.bodyOnly) {
+        process.stderr.write(`${suggestGhPrCreate(proposal.title, proposal.body)}\n`);
+      } else {
+        process.stdout.write(renderGhHint(proposal));
+      }
+    }
+
+    return 0;
+  } catch (error) {
+    const text =
+      error instanceof GitError || error instanceof Error
+        ? error.message
+        : "Unexpected error";
+    process.stderr.write(`${renderError(text)}\n`);
+    return 1;
+  }
+}
+
+function readVersion(): string {
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const pkgPath = join(here, "..", "package.json");
+    const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as {
+      version?: string;
+    };
+    return pkg.version ?? "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
+
+function isDirectRun(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return import.meta.url === pathToFileURL(entry).href;
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectRun()) {
+  main().then(
+    (code) => process.exit(code),
+    (error: unknown) => {
+      process.stderr.write(
+        `${renderError(error instanceof Error ? error.message : "Unexpected error")}\n`,
+      );
+      process.exit(1);
+    },
+  );
+}
