@@ -47,7 +47,7 @@
     "node": ">=18.18"
   },
   "scripts": {
-    "build": "tsc && node -e \"import { chmodSync } from 'node:fs'; chmodSync('dist/cli.js', 0o755)\"",
+    "build": "tsc && node -e \"require('fs').chmodSync('dist/cli.js', 0o755)\"",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run build",
     "test": "tsx --test test/*.test.ts",
