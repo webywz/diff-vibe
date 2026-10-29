@@ -31,10 +31,11 @@ jobs:
           head -n1 dist/cli.js | grep -qx '#!/usr/bin/env node'
       - name: Verify npm pack includes the bin
         run: |
-          npm pack --dry-run | tee /tmp/diff-vibe-pack.txt
+          npm pack --dry-run 2>&1 | tee /tmp/diff-vibe-pack.txt
           grep -E 'dist/cli\.js' /tmp/diff-vibe-pack.txt
           node -e "
-            const pkg = require('./package.json');
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
             if (pkg.bin['diff-vibe'] !== './dist/cli.js') process.exit(1);
             if (pkg.publishConfig.access !== 'public') process.exit(1);
           "
