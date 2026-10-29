@@ -36,6 +36,13 @@ jobs:
           node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-            if (pkg.bin['diff-vibe'] !== './dist/cli.js') process.exit(1);
+            if (pkg.bin['diff-vibe'] !== 'dist/cli.js') process.exit(1);
             if (pkg.publishConfig.access !== 'public') process.exit(1);
           "
+          tarball=$(npm pack --silent)
+          node -e "
+            const { execFileSync } = require('child_process');
+            const packed = JSON.parse(execFileSync('tar', ['-xOf', process.argv[1], 'package/package.json'], { encoding: 'utf8' }));
+            if (packed.bin['diff-vibe'] !== 'dist/cli.js') process.exit(1);
+          " "$tarball"
+          rm -f "$tarball"
