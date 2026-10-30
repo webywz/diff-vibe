@@ -1,24 +1,30 @@
 import { VIBES, type CliOptions, type Vibe } from "./types.ts";
 
 const HELP = `diff-vibe — stylish PR titles + bodies from a git diff, offline-first
+把 git diff 写成有品味的 PR title + body（离线优先）
 
-Usage
+Usage · 用法
   diff-vibe [options]
 
-Options
-  --base [ref]        Diff vs merge-base of <ref> (default ref: main/master)
-  --title-only        Print the title only
-  --body-only         Print the markdown body only
-  --json              Print a machine-readable proposal
-  --copy              Copy the output to the clipboard when available
-  --open              Print a suggested \`gh pr create\` command
-  --create            Run \`gh pr create\` (needs \`gh\`)
-  --update            Edit the open PR for this branch via \`gh pr edit\`
-  --draft             With --create, open as a draft
-  --vibe <style>      calm | punchy | dry            (default: calm)
-  --no-ai             Skip AI even if an API key is set
-  -h, --help          Show help
-  -v, --version       Show version
+Options · 参数
+  --base [ref]              Diff vs merge-base of <ref> (default ref: main/master)
+  --title-only              Print the title only · 只打印标题
+  --body-only               Print the markdown body only · 只打印正文
+  --json                    Print a machine-readable proposal · 机器可读
+  --github                  Emit GitHub Actions annotations (::notice/warning/error)
+                            输出 Actions 注解；有 GITHUB_OUTPUT / GITHUB_STEP_SUMMARY 时写输出与 Job Summary
+  --quiet                   Suppress the pretty terminal report (--json / --github still emit)
+                            抑制漂亮终端报告；--json / --github 仍照常
+  --max-annotations <n>     Cap GitHub annotation lines (default: 20) · 限制注解条数
+  --copy                    Copy the output to the clipboard when available
+  --open                    Print a suggested \`gh pr create\` command
+  --create                  Run \`gh pr create\` (needs \`gh\`)
+  --update                  Edit the open PR for this branch via \`gh pr edit\`
+  --draft                   With --create, open as a draft
+  --vibe <style>            calm | punchy | dry            (default: calm)
+  --no-ai                   Skip AI even if an API key is set
+  -h, --help                Show help
+  -v, --version             Show version
 
 Env
   OPENAI_API_KEY / ANTHROPIC_API_KEY   Optional. Never required
@@ -27,10 +33,22 @@ Env
   ANTHROPIC_MODEL      Default: claude-3-5-haiku-latest
   VIBE / DIFF_VIBE_VIBE   Default vibe when --vibe is omitted
 
-Examples
+With --github, annotations go to stdout (or stderr when combined with --json) so
+PR Checks can surface the proposed title / summary / changes. Job outputs
+title/summary/type/breaking/engine/base/findings are written when GITHUB_OUTPUT
+is set (findings = changes.length). A short Markdown job summary is appended when
+GITHUB_STEP_SUMMARY is set. --quiet hides the pretty report only.
+
+配合 --github 时注解走 stdout（与 --json 联用则走 stderr，保持 JSON 干净）。
+有 GITHUB_OUTPUT 时写入 title/summary 等字段；有 GITHUB_STEP_SUMMARY 时追加 Job Summary。
+--quiet 只隐藏漂亮终端报告。
+
+Examples · 示例
   diff-vibe
   diff-vibe --base main --vibe punchy
   diff-vibe --json
+  diff-vibe --github --quiet --base main
+  diff-vibe --github --json --max-annotations 10
   diff-vibe --open
   diff-vibe --create
   diff-vibe --create --draft
@@ -52,6 +70,9 @@ export function parseArgs(
     titleOnly: false,
     bodyOnly: false,
     json: false,
+    github: false,
+    quiet: false,
+    maxAnnotations: 20,
     copy: false,
     open: false,
     create: false,
@@ -85,6 +106,21 @@ export function parseArgs(
     }
     if (arg === "--json") {
       options.json = true;
+      continue;
+    }
+    if (arg === "--github") {
+      options.github = true;
+      continue;
+    }
+    if (arg === "--quiet") {
+      options.quiet = true;
+      continue;
+    }
+    if (arg === "--max-annotations" || arg.startsWith("--max-annotations=")) {
+      const value = arg.includes("=")
+        ? arg.slice("--max-annotations=".length)
+        : argv[++i];
+      options.maxAnnotations = parseMaxAnnotations(value);
       continue;
     }
     if (arg === "--copy") {
@@ -149,6 +185,16 @@ export function parseArgs(
   }
 
   return options;
+}
+
+export function parseMaxAnnotations(value: string | undefined): number {
+  const raw = value?.trim();
+  if (!raw) throw new UsageError("Missing value for --max-annotations");
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1) {
+    throw new UsageError("--max-annotations must be a positive integer");
+  }
+  return n;
 }
 
 export function parseVibe(value: string | undefined): Vibe {

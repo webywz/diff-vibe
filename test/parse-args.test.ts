@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   defaultVibeFromEnv,
+  helpText,
   parseArgs,
   UsageError,
 } from "../src/parse-args.ts";
@@ -13,6 +14,9 @@ describe("parseArgs", () => {
     assert.equal(options.titleOnly, false);
     assert.equal(options.bodyOnly, false);
     assert.equal(options.json, false);
+    assert.equal(options.github, false);
+    assert.equal(options.quiet, false);
+    assert.equal(options.maxAnnotations, 20);
     assert.equal(options.copy, false);
     assert.equal(options.open, false);
     assert.equal(options.create, false);
@@ -95,6 +99,39 @@ describe("parseArgs", () => {
       UsageError,
     );
     assert.throws(() => parseArgs(["--draft"], {}), UsageError);
+  });
+});
+
+
+describe("parseArgs github / quiet / max-annotations", () => {
+  it("parses --github, --quiet, and --max-annotations", () => {
+    const options = parseArgs(
+      ["--github", "--quiet", "--max-annotations", "8"],
+      {},
+    );
+    assert.equal(options.github, true);
+    assert.equal(options.quiet, true);
+    assert.equal(options.maxAnnotations, 8);
+  });
+
+  it("parses --max-annotations= equals form", () => {
+    assert.equal(parseArgs(["--max-annotations=12"], {}).maxAnnotations, 12);
+  });
+
+  it("rejects invalid --max-annotations", () => {
+    assert.throws(() => parseArgs(["--max-annotations", "0"], {}), UsageError);
+    assert.throws(() => parseArgs(["--max-annotations", "-1"], {}), UsageError);
+    assert.throws(() => parseArgs(["--max-annotations", "1.5"], {}), UsageError);
+    assert.throws(() => parseArgs(["--max-annotations"], {}), UsageError);
+    assert.throws(() => parseArgs(["--max-annotations="], {}), UsageError);
+  });
+
+  it("documents --github / --quiet / --max-annotations in help", () => {
+    const help = helpText();
+    assert.match(help, /--github/);
+    assert.match(help, /--quiet/);
+    assert.match(help, /--max-annotations/);
+    assert.match(help, /抑制漂亮终端报告|Suppress the pretty/);
   });
 });
 

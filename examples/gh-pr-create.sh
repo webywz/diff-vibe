@@ -2,7 +2,7 @@
 # Copy-pasteable: draft a PR title + body with diff-vibe, then open via gh.
 # 可复制：用 diff-vibe 生成 title/body，再交给 gh 开 PR。
 #
-# Pin: @webywz/diff-vibe@^0.1.7  ·  Companion: @webywz/vibe-commit
+# Pin: @webywz/diff-vibe@^0.1.8  ·  Companion: @webywz/vibe-commit
 # Requires: Node.js 18.18+, git, gh  ·  需要：Node 18.18+、git、gh
 #
 # Typical pair flow · 成对流程：
@@ -15,7 +15,7 @@
 set -euo pipefail
 
 BASE="${BASE:-main}"
-PKG="@webywz/diff-vibe@^0.1.7"
+PKG="@webywz/diff-vibe@^0.1.8"
 
 TITLE="$(npx --yes "$PKG" --base "$BASE" --title-only)"
 BODY_FILE="$(mktemp)"
@@ -34,7 +34,7 @@ fi
 
 # Process substitution variant (bash) · bash 进程替换写法：
 #   gh pr create \
-#     --title "$(npx --yes @webywz/diff-vibe@^0.1.7 --base main --title-only)" \
-#     --body-file <(npx --yes @webywz/diff-vibe@^0.1.7 --base main --body-only)
+#     --title "$(npx --yes @webywz/diff-vibe@^0.1.8 --base main --title-only)" \
+#     --body-file <(npx --yes @webywz/diff-vibe@^0.1.8 --base main --body-only)
 
 gh pr create --title "$TITLE" --body-file "$BODY_FILE"

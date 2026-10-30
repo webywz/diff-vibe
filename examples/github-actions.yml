@@ -1,0 +1,46 @@
+# Example: surface a proposed PR title/body as Actions annotations + job summary.
+# Copy into your app repo as .github/workflows/diff-vibe.yml
+# (typically on pull_request so Checks show the draft).
+#
+# 示例：把拟写的 PR title/body 做成 Actions 注解 + Job Summary。
+# 复制到业务仓的 .github/workflows/diff-vibe.yml（通常挂在 pull_request 上）。
+
+name: Diff vibe
+
+on:
+  pull_request:
+
+jobs:
+  diff-vibe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Propose PR draft (annotations + summary)
+        id: vibe
+        run: |
+          npx --yes @webywz/diff-vibe@^0.1.8 \
+            --base "origin/${{ github.event.pull_request.base.ref }}" \
+            --github \
+            --quiet \
+            --max-annotations 20 \
+            --no-ai
+        # --github           → ::notice / ::warning / ::error on the PR Checks UI
+        # --quiet            → suppress the pretty terminal report (annotations / summary / outputs still emit)
+        # --max-annotations  → soft-cap annotation noise (default 20)
+        # When GITHUB_OUTPUT is set, also writes: title, summary, type, breaking, engine, base, findings
+        #   findings = changes.length (count of change bullets)
+        # When GITHUB_STEP_SUMMARY is set, appends a short Markdown job summary
+
+      # Optional: use job outputs from a later step
+      # - name: Echo title
+      #   run: echo "proposed ${{ steps.vibe.outputs.title }} (findings=${{ steps.vibe.outputs.findings }})"
+
+      # Optional: Job Summary is written automatically when GITHUB_STEP_SUMMARY is set
+      # (Actions injects it). No extra step required.

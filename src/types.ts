@@ -70,6 +70,9 @@ export interface CliOptions {
   titleOnly: boolean;
   bodyOnly: boolean;
   json: boolean;
+  github: boolean;
+  quiet: boolean;
+  maxAnnotations: number;
   copy: boolean;
   open: boolean;
   create: boolean;
