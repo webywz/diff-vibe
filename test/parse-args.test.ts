@@ -133,8 +133,10 @@ describe("parseArgs", () => {
     assert.throws(() => parseArgs(["--out="], {}), UsageError);
   });
 
-  it("rejects --out with --suite", () => {
-    assert.throws(() => parseArgs(["--suite", "diffs/", "--out", "report.md"], {}), UsageError);
+  it("allows --out with --suite", () => {
+    const options = parseArgs(["--suite", "diffs/", "--out", "report.json"], {});
+    assert.equal(options.suite, "diffs/");
+    assert.equal(options.out, "report.json");
   });
 });
 

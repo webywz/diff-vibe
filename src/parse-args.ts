@@ -19,8 +19,8 @@ Options · 参数
   --title-only              Print the title only · 只打印标题
   --body-only               Print the markdown body only · 只打印正文
   --json                    Print a machine-readable proposal · 机器可读
-  --out <file>              Write report to file; with --json, write to both file and stdout
-                            写入文件；配合 --json 时同时写文件和 stdout
+  --out <file>              Write to file; with --json also prints to stdout
+                            写入文件；配合 --json 时也打印到 stdout
   --github                  Emit GitHub Actions annotations (::notice/warning/error)
                             输出 Actions 注解；有 GITHUB_OUTPUT / GITHUB_STEP_SUMMARY 时写输出与 Job Summary
   --quiet                   Suppress the pretty terminal report (--json / --github still emit)
@@ -230,9 +230,6 @@ export function parseArgs(
     }
     if (options.create || options.update || options.open) {
       throw new UsageError("--suite cannot be combined with --create, --update, or --open");
-    }
-    if (options.out) {
-      throw new UsageError("--suite cannot be combined with --out (suite mode writes to stdout only)");
     }
   }
 

@@ -122,13 +122,14 @@ diff-vibe --suite "examples/{a,b}/*.diff"   # brace expansion
 diff-vibe --suite "suite/{good,bad}.diff"   # specific files with braces
 diff-vibe --suite diffs/ --fail-above 0     # exit non-zero if any fail
 diff-vibe --suite diffs/ --vibe punchy --locale zh
+diff-vibe --suite diffs/ --out report.json  # write to file (stdout quiet)
+diff-vibe --suite diffs/ --out report.json --json  # write to file + stdout
 ```
 
 **Requirements · 要求:**
 
 - **≥2 diff files** required (otherwise error) · 需要 ≥2 个 diff 文件（否则报错）
 - Each `.diff` file = one diff pair · 每个 `.diff` 文件 = 一个 diff pair
-- Outputs JSON only (no pretty terminal report) · 仅输出 JSON（无漂亮终端报告）
 
 **Output schema · 输出格式:**
 
