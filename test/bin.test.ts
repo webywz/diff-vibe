@@ -26,7 +26,7 @@ describe("CLI bin", () => {
       const out = execFileSync(process.execPath, [link, "-v"], {
         encoding: "utf8",
       });
-      assert.match(out.trim(), /diff-vibe\s+0\.1\.4/);
+      assert.match(out.trim(), /diff-vibe\s+0\.1\.5/);
       assert.notEqual(out.trim(), "");
 
       const help = execFileSync(process.execPath, [link, "--help"], {
