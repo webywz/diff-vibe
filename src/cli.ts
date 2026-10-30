@@ -228,7 +228,29 @@ async function runSuiteMode(options: import("./types.ts").CliOptions): Promise<n
     });
 
     const output = JSON.stringify(result, null, 2);
-    process.stdout.write(`${output}\n`);
+
+    if (options.out) {
+      // Write to file
+      try {
+        writeFileSync(options.out, `${output}\n`, "utf8");
+        if (!options.quiet) {
+          process.stderr.write(`wrote report to ${options.out}\n`);
+        }
+      } catch (err) {
+        process.stderr.write(
+          `${renderError(`Failed to write ${options.out}: ${err instanceof Error ? err.message : err}`)}\n`,
+        );
+        return 1;
+      }
+      // With --json, also write to stdout
+      if (options.json) {
+        process.stdout.write(`${output}\n`);
+      }
+      // Otherwise stdout stays quiet (file only)
+    } else {
+      // Original behavior when --out is not set
+      process.stdout.write(`${output}\n`);
+    }
 
     const threshold = options.failAbove ?? 0;
     if (result.stats.failed > threshold) {

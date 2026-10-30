@@ -308,4 +308,139 @@ describe("cli e2e", () => {
     const content = readFileSync(outFile, "utf8");
     assert.match(content, /feat\(auth\): /);
   });
+
+  it("writes suite report to file with --suite --out", () => {
+    const suiteDir = mkdtempSync(join(tmpdir(), "diff-vibe-suite-out-"));
+    repos.push(suiteDir);
+    
+    const diff1 = `diff --git a/src/auth.ts b/src/auth.ts
+index 1234567..abcdefg 100644
+--- a/src/auth.ts
++++ b/src/auth.ts
+@@ -1,3 +1,5 @@
+ export function login() {
+   return true;
+ }
++export function logout() {
++  return false;
++}`;
+    
+    const diff2 = `diff --git a/README.md b/README.md
+index 9876543..fedcba9 100644
+--- a/README.md
++++ b/README.md
+@@ -1,1 +1,1 @@
+-# My Project
++# diff-vibe Project`;
+    
+    writeFileSync(join(suiteDir, "feat.diff"), diff1);
+    writeFileSync(join(suiteDir, "docs.diff"), diff2);
+    
+    const outFile = join(suiteDir, "report.json");
+    const result = run(suiteDir, ["--suite", suiteDir, "--out", outFile, "--no-ai"]);
+    
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), "", "stdout should be empty with --out (no --json)");
+    assert.match(result.stderr, /wrote report to/);
+    
+    const content = readFileSync(outFile, "utf8");
+    const payload = JSON.parse(content) as {
+      results: Array<{ file: string; success: boolean }>;
+      stats: { total: number; succeeded: number; failed: number };
+    };
+    
+    assert.equal(payload.results.length, 2);
+    assert.equal(payload.stats.total, 2);
+    assert.equal(payload.stats.succeeded, 2);
+  });
+
+  it("writes suite report to both file and stdout with --suite --out --json", () => {
+    const suiteDir = mkdtempSync(join(tmpdir(), "diff-vibe-suite-json-"));
+    repos.push(suiteDir);
+    
+    const diff1 = `diff --git a/src/auth.ts b/src/auth.ts
+index 1234567..abcdefg 100644
+--- a/src/auth.ts
++++ b/src/auth.ts
+@@ -1,3 +1,5 @@
+ export function login() {
+   return true;
+ }
++export function logout() {
++  return false;
++}`;
+    
+    const diff2 = `diff --git a/test/auth.test.ts b/test/auth.test.ts
+new file mode 100644
+index 0000000..7890abc
+--- /dev/null
++++ b/test/auth.test.ts
+@@ -0,0 +1,5 @@
++import { login } from '../src/auth';
++
++test('login', () => {
++  expect(login()).toBe(true);
++});`;
+    
+    writeFileSync(join(suiteDir, "feat.diff"), diff1);
+    writeFileSync(join(suiteDir, "test.diff"), diff2);
+    
+    const outFile = join(suiteDir, "report.json");
+    const result = run(suiteDir, ["--suite", suiteDir, "--out", outFile, "--json", "--no-ai"]);
+    
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stderr, /wrote report to/);
+    
+    // Check stdout has JSON
+    const stdoutPayload = JSON.parse(result.stdout) as {
+      results: Array<{ file: string; success: boolean }>;
+      stats: { total: number; succeeded: number };
+    };
+    assert.equal(stdoutPayload.results.length, 2);
+    assert.equal(stdoutPayload.stats.total, 2);
+    
+    // Check file has the same JSON
+    const fileContent = readFileSync(outFile, "utf8");
+    const filePayload = JSON.parse(fileContent) as typeof stdoutPayload;
+    assert.deepEqual(filePayload, stdoutPayload, "file and stdout JSON should match");
+  });
+
+  it("suppresses 'wrote report to' with --suite --out --quiet", () => {
+    const suiteDir = mkdtempSync(join(tmpdir(), "diff-vibe-suite-quiet-"));
+    repos.push(suiteDir);
+    
+    const diff1 = `diff --git a/src/auth.ts b/src/auth.ts
+index 1234567..abcdefg 100644
+--- a/src/auth.ts
++++ b/src/auth.ts
+@@ -1,3 +1,5 @@
+ export function login() {
+   return true;
+ }
++export function logout() {
++  return false;
++}`;
+    
+    const diff2 = `diff --git a/README.md b/README.md
+index 9876543..fedcba9 100644
+--- a/README.md
++++ b/README.md
+@@ -1,1 +1,1 @@
+-# My Project
++# diff-vibe Project`;
+    
+    writeFileSync(join(suiteDir, "feat.diff"), diff1);
+    writeFileSync(join(suiteDir, "docs.diff"), diff2);
+    
+    const outFile = join(suiteDir, "report.json");
+    const result = run(suiteDir, ["--suite", suiteDir, "--out", outFile, "--quiet", "--no-ai"]);
+    
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), "");
+    assert.equal(result.stderr.includes("wrote report to"), false);
+    
+    const content = readFileSync(outFile, "utf8");
+    const payload = JSON.parse(content);
+    assert.equal(payload.results.length, 2);
+  });
 });
