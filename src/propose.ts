@@ -12,6 +12,7 @@ export async function proposePr(
     type: options.type,
     scope: options.scope,
     vibe: options.vibe,
+    locale: options.locale,
   });
 
   if (options.preferAi === false) return heuristic;
@@ -24,6 +25,7 @@ export async function proposePr(
     {
       diff,
       vibe: options.vibe,
+      locale: options.locale,
       type: options.type,
       scope: options.scope,
     },

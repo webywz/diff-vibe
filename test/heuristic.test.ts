@@ -144,7 +144,15 @@ describe("inferSubject", () => {
       [diffFile({ path: "src/auth.ts", status: statuses.add })],
       [addedLines("src/auth.ts", "export function refreshToken() {}")],
     );
-    assert.equal(inferSubject(diff, "feat", "auth"), "add refresh token");
+    assert.equal(inferSubject(diff, "feat", "auth", "en"), "add refresh token");
+  });
+
+  it("generates Chinese subjects when locale is zh", () => {
+    const diff = gitDiff(
+      [diffFile({ path: "src/auth.ts", status: statuses.add })],
+      [addedLines("src/auth.ts", "export function refreshToken() {}")],
+    );
+    assert.equal(inferSubject(diff, "feat", "auth", "zh"), "添加 refresh token");
   });
 
   it("describes a single added file", () => {
@@ -155,7 +163,7 @@ describe("inferSubject", () => {
         deletions: 0,
       }),
     ]);
-    assert.equal(inferSubject(diff, "feat"), "add heuristic");
+    assert.equal(inferSubject(diff, "feat", undefined, "en"), "add heuristic");
   });
 
   it("describes a rename", () => {
@@ -166,12 +174,12 @@ describe("inferSubject", () => {
         status: statuses.rename,
       }),
     ]);
-    assert.equal(inferSubject(diff, "refactor"), "rename args to parse args");
+    assert.equal(inferSubject(diff, "refactor", undefined, "en"), "rename args to parse args");
   });
 
   it("uses update readme for documentation", () => {
     const diff = gitDiff([diffFile({ path: "README.md" })]);
-    assert.equal(inferSubject(diff, "docs"), "update readme");
+    assert.equal(inferSubject(diff, "docs", undefined, "en"), "update readme");
   });
 });
 
@@ -190,15 +198,41 @@ describe("proposeHeuristic", () => {
         [addedLines("src/auth/login.ts", "export function login() {}")],
       ),
       vibe: "calm",
+      locale: "en",
     });
     assert.match(proposal.title, /^feat\(auth\): /);
     assert.equal(proposal.engine, "heuristic");
+    assert.equal(proposal.locale, "en");
     assert.match(proposal.body, /^## Summary/m);
     assert.match(proposal.body, /^## Changes/m);
     assert.match(proposal.body, /^## Test plan/m);
     assert.match(proposal.body, /Add `src\/auth\/login\.ts`/);
     const formatted = formatPr(proposal);
     assert.equal(formatted.startsWith(proposal.title), true);
+  });
+
+  it("generates Chinese PR body when locale is zh", () => {
+    const proposal = proposeHeuristic({
+      diff: gitDiff(
+        [
+          diffFile({
+            path: "src/auth/login.ts",
+            status: statuses.add,
+            additions: 40,
+            deletions: 0,
+          }),
+        ],
+        [addedLines("src/auth/login.ts", "export function login() {}")],
+      ),
+      vibe: "calm",
+      locale: "zh",
+    });
+    assert.match(proposal.title, /^feat\(auth\): /);
+    assert.equal(proposal.engine, "heuristic");
+    assert.equal(proposal.locale, "zh");
+    assert.match(proposal.body, /## Summary/m);
+    assert.match(proposal.body, /添加/);
+    assert.match(proposal.body, /个文件/);
   });
 
   it("summarizes a brand-new multi-file tree without overfit identifiers", () => {
@@ -210,6 +244,7 @@ describe("proposeHeuristic", () => {
         diffFile({ path: "README.md", status: statuses.add, deletions: 0 }),
       ]),
       vibe: "calm",
+      locale: "en",
     });
     assert.equal(proposal.type, "feat");
     assert.equal(proposal.subject, "add initial implementation");
@@ -228,6 +263,7 @@ describe("proposeHeuristic", () => {
         ],
       ),
       vibe: "calm",
+      locale: "en",
     });
     assert.equal(noisy.breaking, false);
 
@@ -237,6 +273,7 @@ describe("proposeHeuristic", () => {
         [addedLines("CHANGELOG.md", "BREAKING CHANGE: drop Node 16")],
       ),
       vibe: "calm",
+      locale: "en",
     });
     assert.equal(footer.breaking, true);
     assert.match(footer.title, /!/);
@@ -250,6 +287,7 @@ describe("proposeHeuristic", () => {
         diffFile({ path: "src/c.ts" }),
       ]),
       vibe: "dry",
+      locale: "en",
     });
     assert.match(proposal.body, /## Summary/);
     assert.match(proposal.body, /## Changes/);
@@ -263,6 +301,7 @@ describe("proposeHeuristic", () => {
         diffFile({ path: "src/cli.ts", status: statuses.add, additions: 80 }),
       ]),
       vibe: "calm",
+      locale: "en",
     });
     assert.ok(
       proposal.testPlan.some((item) => /--help/.test(item)),
@@ -277,6 +316,7 @@ describe("proposeHeuristic", () => {
         [addedLines("src/parser.ts", "// fix crash on empty hunks")],
       ),
       vibe: "calm",
+      locale: "en",
     });
     assert.equal(proposal.type, "fix");
     assert.ok(proposal.testPlan.some((item) => /Reproduce/.test(item)));

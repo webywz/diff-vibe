@@ -48,6 +48,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     const inspected = inspectDiff(process.cwd(), options.base);
     const proposal = await proposePr(inspected.diff, {
       vibe: options.vibe,
+      locale: options.locale,
       preferAi: !options.noAi,
     });
     const mode = options.titleOnly

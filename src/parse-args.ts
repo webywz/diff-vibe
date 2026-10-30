@@ -1,4 +1,5 @@
-import { VIBES, type CliOptions, type Vibe } from "./types.ts";
+import { VIBES, LOCALES, type CliOptions, type Vibe, type Locale } from "./types.ts";
+import { resolveLocale, resolveVibe } from "./config.ts";
 
 const HELP = `diff-vibe — stylish PR titles + bodies from a git diff, offline-first
 把 git diff 写成有品味的 PR title + body（离线优先）
@@ -22,6 +23,8 @@ Options · 参数
   --update                  Edit the open PR for this branch via \`gh pr edit\`
   --draft                   With --create, open as a draft
   --vibe <style>            calm | punchy | dry            (default: calm)
+  --locale <locale>         en | zh                        (default: en)
+                            PR title + body language · PR 标题与正文语言
   --no-ai                   Skip AI even if an API key is set
   -h, --help                Show help
   -v, --version             Show version
@@ -31,7 +34,8 @@ Env
   OPENAI_MODEL         Default: gpt-4o-mini
   OPENAI_BASE_URL      Default: https://api.openai.com/v1
   ANTHROPIC_MODEL      Default: claude-3-5-haiku-latest
-  VIBE / DIFF_VIBE_VIBE   Default vibe when --vibe is omitted
+  VIBE / DIFF_VIBE_VIBE      Default vibe when --vibe is omitted
+  VIBE_LOCALE / DIFF_VIBE_LOCALE   Default locale when --locale is omitted
 
 With --github, annotations go to stdout (or stderr when combined with --json) so
 PR Checks can surface the proposed title / summary / changes. Job outputs
@@ -55,16 +59,10 @@ Examples · 示例
   diff-vibe --update
 `;
 
-export function defaultVibeFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): Vibe {
-  const raw = (env.DIFF_VIBE_VIBE ?? env.VIBE ?? "calm").trim().toLowerCase();
-  return (VIBES as readonly string[]).includes(raw) ? (raw as Vibe) : "calm";
-}
-
 export function parseArgs(
   argv: string[],
   env: NodeJS.ProcessEnv = process.env,
+  cwd = process.cwd(),
 ): CliOptions {
   const options: CliOptions = {
     titleOnly: false,
@@ -78,7 +76,8 @@ export function parseArgs(
     create: false,
     update: false,
     draft: false,
-    vibe: defaultVibeFromEnv(env),
+    vibe: resolveVibe(env, cwd),
+    locale: resolveLocale(env, cwd),
     noAi: false,
     help: false,
     version: false,
@@ -168,6 +167,11 @@ export function parseArgs(
       options.vibe = parseVibe(value);
       continue;
     }
+    if (arg === "--locale" || arg.startsWith("--locale=")) {
+      const value = arg.includes("=") ? arg.slice("--locale=".length) : argv[++i];
+      options.locale = parseLocale(value);
+      continue;
+    }
     if (arg.startsWith("-")) {
       throw new UsageError(`Unknown option: ${arg}`);
     }
@@ -204,6 +208,15 @@ export function parseVibe(value: string | undefined): Vibe {
     throw new UsageError(`Invalid --vibe "${value}". Use: ${VIBES.join(", ")}`);
   }
   return raw as Vibe;
+}
+
+export function parseLocale(value: string | undefined): Locale {
+  const raw = value?.trim().toLowerCase();
+  if (!raw) throw new UsageError("Missing value for --locale");
+  if (!(LOCALES as readonly string[]).includes(raw)) {
+    throw new UsageError(`Invalid --locale "${value}". Use: ${LOCALES.join(", ")}`);
+  }
+  return raw as Locale;
 }
 
 export class UsageError extends Error {

@@ -134,6 +134,7 @@ Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh
 | `--update` | Edit open PR for this branch (`gh pr edit`) · 更新当前分支已开 PR；无 PR 时请用 `--create` |
 | `--draft` | With `--create`, open a draft · 仅配合 `--create`；与 `--update` 互斥 |
 | `--vibe <style>` | `calm` \| `punchy` \| `dry` (default: `calm`) |
+| `--locale <locale>` | `en` \| `zh` (default: `en`) · PR title + body language · PR 标题与正文语言 |
 | `--no-ai` | Skip the API even if a key is set · 有 Key 也不走 AI |
 | `-h`, `--help` | Help |
 | `-v`, `--version` | Version |
@@ -143,6 +144,45 @@ Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh
 - **calm** — default. Imperative, review-ready, conventional. · 默认：专业祈使句，可直接贴进 PR
 - **punchy** — a little personality, still safe. · 带一点俏皮
 - **dry** — filler gone; sections stay, sentences shrink. · 更短
+
+### Locale support · 语言支持
+
+diff-vibe supports English (`en`, default) and Chinese (`zh`) PR titles and bodies:
+
+diff-vibe 支持英文（`en`，默认）和中文（`zh`）的 PR 标题与正文：
+
+```bash
+diff-vibe --locale zh --base main        # Chinese PR: 添加/修复/更新...
+diff-vibe --locale en --base main        # English PR: add/fix/update...
+```
+
+**Configuration precedence** · 配置优先级：
+1. CLI flag `--locale`
+2. Environment variable `VIBE_LOCALE` or `DIFF_VIBE_LOCALE`
+3. Project config (`.diff-vibe.json` or `package.json#diffVibe`)
+4. Default `en`
+
+```json
+// .diff-vibe.json
+{
+  "locale": "zh",
+  "vibe": "calm"
+}
+```
+
+```json
+// package.json
+{
+  "diffVibe": {
+    "locale": "zh",
+    "vibe": "punchy"
+  }
+}
+```
+
+Both heuristic and AI engines respect the locale setting. The `--json` output includes a `locale` field.
+
+启发式引擎和 AI 引擎都会遵循 locale 设置。`--json` 输出包含 `locale` 字段。
 
 ---
 
@@ -175,7 +215,8 @@ export OPENAI_BASE_URL=https://api.openai.com/v1   # any compatible gateway
 export ANTHROPIC_API_KEY=sk-ant-...
 export ANTHROPIC_MODEL=claude-3-5-haiku-latest
 
-export DIFF_VIBE_VIBE=calm
+export DIFF_VIBE_VIBE=calm                # or VIBE
+export DIFF_VIBE_LOCALE=zh                # or VIBE_LOCALE (default: en)
 ```
 
 Keys are never required. Huge diffs are truncated before they leave the machine. No key / timeout / 4xx/5xx → silent fallback to the offline heuristic.

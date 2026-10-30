@@ -4,6 +4,7 @@ import type {
   DiffFile,
   DiffHunk,
   GitDiff,
+  Locale,
   ProposedPr,
   Vibe,
 } from "./types.ts";
@@ -39,26 +40,50 @@ const REFACTOR_WORD_RE =
 const PERF_WORD_RE =
   /\b(perf|performance|optimiz|cache|faster|speed)\b/i;
 
+const VERBS_ZH: Record<string, string> = {
+  add: "添加",
+  update: "更新",
+  fix: "修复",
+  remove: "移除",
+  rename: "重命名",
+  refactor: "重构",
+  improve: "改进",
+  format: "格式化",
+};
+
+const WORDS_ZH: Record<string, string> = {
+  to: "为",
+  and: "与",
+  tests: "测试",
+  performance: "性能",
+  workflow: "工作流",
+  build: "构建",
+  dependencies: "依赖",
+  readme: "说明文档",
+  "initial implementation": "初始实现",
+};
+
 export interface HeuristicInput {
   diff: GitDiff;
   type?: CommitType;
   scope?: string;
   vibe: Vibe;
+  locale: Locale;
 }
 
 export function proposeHeuristic(input: HeuristicInput): ProposedPr {
-  const { diff, vibe } = input;
+  const { diff, vibe, locale } = input;
   const type = input.type ?? inferType(diff);
   const scope = input.scope ?? inferScope(diff.files);
-  const subject = inferSubject(diff, type, scope);
+  const subject = inferSubject(diff, type, scope, locale);
   const breaking = inferBreaking(diff);
-  const summary = inferSummary(diff, type, subject, scope);
+  const summary = inferSummary(diff, type, subject, scope, locale);
   const styled = applyVibe(
     { type, scope, subject, summary, breaking },
     vibe,
   );
-  const changes = inferChanges(diff.files, vibe);
-  const testPlan = inferTestPlan(diff, type);
+  const changes = inferChanges(diff.files, vibe, locale);
+  const testPlan = inferTestPlan(diff, type, locale);
   const title = formatTitle(styled);
   const body = formatBody({
     summary: styled.summary,
@@ -76,6 +101,7 @@ export function proposeHeuristic(input: HeuristicInput): ProposedPr {
     testPlan,
     breaking: styled.breaking,
     engine: "heuristic",
+    locale,
   };
 }
 
@@ -188,10 +214,13 @@ export function inferScope(files: DiffFile[]): string | undefined {
 export function inferSubject(
   diff: GitDiff,
   type: CommitType,
-  scope?: string,
+  scope: string | undefined,
+  locale: Locale,
 ): string {
   const files = diff.files;
-  if (files.length === 0) return "update project files";
+  if (files.length === 0) {
+    return locale === "zh" ? "更新项目文件" : "update project files";
+  }
 
   const added = files.filter((file) => file.status === "A");
   const deleted = files.filter((file) => file.status === "D");
@@ -205,44 +234,87 @@ export function inferSubject(
     !scope &&
     type === "feat"
   ) {
-    return normalizeSubject("add initial implementation");
+    const text = locale === "zh" ? "添加初始实现" : "add initial implementation";
+    return normalizeSubject(text);
   }
 
   if (renamed.length === 1 && files.length === 1) {
     const file = renamed[0]!;
-    return normalizeSubject(
-      `rename ${stem(file.fromPath ?? file.path)} to ${stem(file.path)}`,
-    );
+    const text = locale === "zh"
+      ? `重命名 ${stem(file.fromPath ?? file.path)} 为 ${stem(file.path)}`
+      : `rename ${stem(file.fromPath ?? file.path)} to ${stem(file.path)}`;
+    return normalizeSubject(text);
   }
   if (deleted.length === files.length) {
+    const verb = locale === "zh" ? "移除" : "remove";
     return normalizeSubject(
-      `remove ${joinNames(deleted.map((file) => stem(file.path)))}`,
+      `${verb} ${joinNames(deleted.map((file) => stem(file.path)))}`,
     );
   }
   if (idents.length > 0 && (type === "feat" || type === "fix")) {
-    const verb = type === "fix" ? "fix" : "add";
+    const verb = locale === "zh" 
+      ? (type === "fix" ? "修复" : "添加")
+      : (type === "fix" ? "fix" : "add");
     return normalizeSubject(`${verb} ${joinNames(idents.map(humanizeIdent))}`);
   }
   if (added.length === 1 && files.length === 1) {
-    return normalizeSubject(`add ${stem(added[0]!.path)}`);
+    const verb = locale === "zh" ? "添加" : "add";
+    return normalizeSubject(`${verb} ${stem(added[0]!.path)}`);
   }
   if (added.length > 1 && added.length === files.length) {
-    return normalizeSubject(`add ${summarizeFiles(added, scope)}`);
+    const verb = locale === "zh" ? "添加" : "add";
+    return normalizeSubject(`${verb} ${summarizeFiles(added, scope)}`);
   }
 
   const focus =
     files.length === 1 ? stem(files[0]!.path) : summarizeFiles(files, scope);
-  return normalizeSubject(verbFor(type, focus, files));
+  return normalizeSubject(verbFor(type, focus, files, locale));
 }
 
 function verbFor(
   type: CommitType,
   focus: string,
   files: DiffFile[],
+  locale: Locale,
 ): string {
   const mostlyAdd =
     files.reduce((sum, file) => sum + file.additions, 0) >
     files.reduce((sum, file) => sum + file.deletions, 0) * 1.4;
+  
+  if (locale === "zh") {
+    switch (type) {
+      case "feat":
+        return mostlyAdd ? `添加 ${focus}` : `更新 ${focus}`;
+      case "fix":
+        return `修复 ${focus}`;
+      case "docs":
+        return files.some((file) => /readme/i.test(file.path))
+          ? "更新说明文档"
+          : `更新 ${focus}`;
+      case "test":
+        return mostlyAdd ? `添加 ${focus} 测试` : `更新 ${focus} 测试`;
+      case "refactor":
+        return `重构 ${focus}`;
+      case "perf":
+        return `改进 ${focus} 性能`;
+      case "style":
+        return `格式化 ${focus}`;
+      case "ci":
+        return `更新 ${focus} 工作流`;
+      case "build":
+        return `更新 ${focus} 构建`;
+      case "chore":
+        if (
+          files.some((file) =>
+            /package(-lock)?\.json|pnpm-lock|yarn\.lock/.test(file.path),
+          )
+        ) {
+          return "更新依赖";
+        }
+        return `更新 ${focus}`;
+    }
+  }
+  
   switch (type) {
     case "feat":
       return mostlyAdd ? `add ${focus}` : `update ${focus}`;
@@ -303,14 +375,43 @@ function inferSummary(
   diff: GitDiff,
   type: CommitType,
   subject: string,
-  scope?: string,
+  scope: string | undefined,
+  locale: Locale,
 ): string {
   const totals = fileTotals(diff.files);
-  const filesWord =
-    diff.files.length === 1 ? "1 file" : `${diff.files.length} files`;
+  const filesWord = locale === "zh"
+    ? (diff.files.length === 1 ? "1 个文件" : `${diff.files.length} 个文件`)
+    : (diff.files.length === 1 ? "1 file" : `${diff.files.length} files`);
   const stats = `+${totals.add} / −${totals.del}`;
-  const focus = stripLeadingVerb(subject);
-  const where = scope ? ` in ${scope}` : "";
+  const focus = stripLeadingVerb(subject, locale);
+  const where = scope 
+    ? (locale === "zh" ? ` 在 ${scope} 中` : ` in ${scope}`)
+    : "";
+
+  if (locale === "zh") {
+    switch (type) {
+      case "feat":
+        return `添加${focus}${where}。本次 diff 包含 ${filesWord}（${stats}）。`;
+      case "fix":
+        return `修复${focus}${where}。${filesWord}变更（${stats}）。`;
+      case "docs":
+        return `更新文档${where}：${focus}。${filesWord}（${stats}）。`;
+      case "test":
+        return `覆盖${focus}${where}。本次 diff 包含 ${filesWord}（${stats}）。`;
+      case "refactor":
+        return `重构${focus}${where}，不改变行为。${filesWord}（${stats}）。`;
+      case "perf":
+        return `加速${focus}${where}。${filesWord}（${stats}）。`;
+      case "ci":
+        return `保持 CI 诚实${where}：${focus}。${filesWord}（${stats}）。`;
+      case "build":
+        return `更新构建${where}：${focus}。${filesWord}（${stats}）。`;
+      case "style":
+        return `格式化${focus}${where}。${filesWord}（${stats}）。`;
+      case "chore":
+        return `维护工作${where}：${focus}。${filesWord}（${stats}）。`;
+    }
+  }
 
   switch (type) {
     case "feat":
@@ -336,21 +437,38 @@ function inferSummary(
   }
 }
 
-function inferChanges(files: DiffFile[], vibe: Vibe): string[] {
+function inferChanges(files: DiffFile[], vibe: Vibe, locale: Locale): string[] {
   const limit = vibe === "dry" ? 8 : 12;
   const listed = files.slice(0, limit);
   const items =
     vibe === "dry"
       ? listed.map((file) => `\`${file.path}\``)
-      : listed.map((file) => changeLine(file));
+      : listed.map((file) => changeLine(file, locale));
   if (files.length > limit) {
-    items.push(`And ${files.length - limit} more files`);
+    const moreText = locale === "zh" 
+      ? `以及其他 ${files.length - limit} 个文件`
+      : `And ${files.length - limit} more files`;
+    items.push(moreText);
   }
   return items;
 }
 
-function changeLine(file: DiffFile): string {
+function changeLine(file: DiffFile, locale: Locale): string {
   const stats = `+${file.additions} −${file.deletions}`;
+  if (locale === "zh") {
+    switch (file.status) {
+      case "A":
+        return `添加 \`${file.path}\` (${stats})`;
+      case "D":
+        return `移除 \`${file.path}\``;
+      case "R":
+        return `重命名 \`${file.fromPath ?? "?"}\` → \`${file.path}\``;
+      case "C":
+        return `复制 \`${file.fromPath ?? "?"}\` → \`${file.path}\``;
+      default:
+        return `更新 \`${file.path}\` (${stats})`;
+    }
+  }
   switch (file.status) {
     case "A":
       return `Add \`${file.path}\` (${stats})`;
@@ -365,7 +483,7 @@ function changeLine(file: DiffFile): string {
   }
 }
 
-function inferTestPlan(diff: GitDiff, type: CommitType): string[] {
+function inferTestPlan(diff: GitDiff, type: CommitType, locale: Locale): string[] {
   const paths = diff.files.map((file) => file.path);
   const plan: string[] = [];
   const hasTests = paths.some((path) => isTestPath(path));
@@ -380,25 +498,48 @@ function inferTestPlan(diff: GitDiff, type: CommitType): string[] {
       !isTestPath(path),
   );
 
-  if (type === "fix") {
-    plan.push("Reproduce the failure, apply the change, confirm it is gone.");
-  }
-  if (hasTests) {
-    plan.push("Run `npm test` (and the new or updated cases in this diff).");
-  } else if (hasCode) {
-    plan.push("Hit the happy path once — unit tests if you have them, otherwise a manual pass.");
-  }
-  if (hasCli) {
-    plan.push("Run `--help` and one typical command; confirm the output still reads clean.");
-  }
-  if (hasCi) {
-    plan.push("Confirm the workflow still runs on push and pull_request.");
-  }
-  if (hasDocs) {
-    plan.push("Skim the rendered markdown for broken links and tone.");
-  }
-  if (plan.length === 0) {
-    plan.push("Re-read the diff and sanity-check the main path.");
+  if (locale === "zh") {
+    if (type === "fix") {
+      plan.push("复现失败，应用变更，确认问题消失。");
+    }
+    if (hasTests) {
+      plan.push("运行 `npm test`（以及本次 diff 中的新增或更新用例）。");
+    } else if (hasCode) {
+      plan.push("走一遍快乐路径 — 有单元测试就跑测试，否则手动验证一次。");
+    }
+    if (hasCli) {
+      plan.push("运行 `--help` 和一条典型命令；确认输出仍然清晰。");
+    }
+    if (hasCi) {
+      plan.push("确认工作流仍在 push 和 pull_request 时运行。");
+    }
+    if (hasDocs) {
+      plan.push("浏览渲染后的 markdown，检查失效链接和语气。");
+    }
+    if (plan.length === 0) {
+      plan.push("重读 diff，对主路径进行完整性检查。");
+    }
+  } else {
+    if (type === "fix") {
+      plan.push("Reproduce the failure, apply the change, confirm it is gone.");
+    }
+    if (hasTests) {
+      plan.push("Run `npm test` (and the new or updated cases in this diff).");
+    } else if (hasCode) {
+      plan.push("Hit the happy path once — unit tests if you have them, otherwise a manual pass.");
+    }
+    if (hasCli) {
+      plan.push("Run `--help` and one typical command; confirm the output still reads clean.");
+    }
+    if (hasCi) {
+      plan.push("Confirm the workflow still runs on push and pull_request.");
+    }
+    if (hasDocs) {
+      plan.push("Skim the rendered markdown for broken links and tone.");
+    }
+    if (plan.length === 0) {
+      plan.push("Re-read the diff and sanity-check the main path.");
+    }
   }
   return [...new Set(plan)].slice(0, 4);
 }
@@ -414,7 +555,15 @@ function fileTotals(files: DiffFile[]): { add: number; del: number } {
   );
 }
 
-function stripLeadingVerb(subject: string): string {
+function stripLeadingVerb(subject: string, locale: Locale): string {
+  if (locale === "zh") {
+    return subject
+      .replace(
+        /^(添加|修复|更新|移除|重命名|重构|改进|格式化|覆盖|发布)\s*/,
+        "",
+      )
+      .trim() || subject;
+  }
   return subject
     .replace(
       /^(add|fix|update|remove|rename|refactor|improve|format|cover|ship)\s+/i,

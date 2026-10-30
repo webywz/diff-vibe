@@ -1,16 +1,17 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  defaultVibeFromEnv,
   helpText,
   parseArgs,
+  parseLocale,
   UsageError,
 } from "../src/parse-args.ts";
 
 describe("parseArgs", () => {
-  it("defaults to calm vibe and full output", () => {
+  it("defaults to calm vibe, en locale, and full output", () => {
     const options = parseArgs([], {});
     assert.equal(options.vibe, "calm");
+    assert.equal(options.locale, "en");
     assert.equal(options.titleOnly, false);
     assert.equal(options.bodyOnly, false);
     assert.equal(options.json, false);
@@ -90,9 +91,27 @@ describe("parseArgs", () => {
     assert.equal(parseArgs([], { DIFF_VIBE_VIBE: "punchy" }).vibe, "punchy");
   });
 
-  it("rejects unknown flags, bad vibes, and mixed output flags", () => {
+  it("parses --locale flag", () => {
+    assert.equal(parseArgs(["--locale", "zh"], {}).locale, "zh");
+    assert.equal(parseArgs(["--locale=en"], {}).locale, "en");
+  });
+
+  it("reads locale from env when flag is omitted", () => {
+    assert.equal(parseArgs([], { VIBE_LOCALE: "zh" }).locale, "zh");
+    assert.equal(parseArgs([], { DIFF_VIBE_LOCALE: "zh" }).locale, "zh");
+    assert.equal(parseArgs([], { DIFF_VIBE_LOCALE: "zh", VIBE_LOCALE: "en" }).locale, "zh");
+  });
+
+  it("CLI flag overrides env locale", () => {
+    assert.equal(parseArgs(["--locale", "en"], { VIBE_LOCALE: "zh" }).locale, "en");
+    assert.equal(parseArgs(["--locale", "zh"], { DIFF_VIBE_LOCALE: "en" }).locale, "zh");
+  });
+
+  it("rejects unknown flags, bad vibes, bad locales, and mixed output flags", () => {
     assert.throws(() => parseArgs(["--wat"], {}), UsageError);
     assert.throws(() => parseArgs(["--vibe", "chaotic"], {}), UsageError);
+    assert.throws(() => parseArgs(["--locale", "fr"], {}), UsageError);
+    assert.throws(() => parseArgs(["--locale"], {}), UsageError);
     assert.throws(() => parseArgs(["extra"], {}), UsageError);
     assert.throws(
       () => parseArgs(["--title-only", "--body-only"], {}),
@@ -135,8 +154,17 @@ describe("parseArgs github / quiet / max-annotations", () => {
   });
 });
 
-describe("defaultVibeFromEnv", () => {
-  it("falls back to calm for unknown values", () => {
-    assert.equal(defaultVibeFromEnv({ VIBE: "LOUD" }), "calm");
+describe("parseLocale", () => {
+  it("parses valid locales", () => {
+    assert.equal(parseLocale("en"), "en");
+    assert.equal(parseLocale("zh"), "zh");
+    assert.equal(parseLocale("EN"), "en");
+    assert.equal(parseLocale("ZH"), "zh");
+  });
+
+  it("rejects invalid locales", () => {
+    assert.throws(() => parseLocale("fr"), UsageError);
+    assert.throws(() => parseLocale(""), UsageError);
+    assert.throws(() => parseLocale(undefined), UsageError);
   });
 });
