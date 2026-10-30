@@ -83,6 +83,7 @@ export interface CliOptions {
   create: boolean;
   update: boolean;
   draft: boolean;
+  out?: string;
   vibe: Vibe;
   locale: Locale;
   noAi: boolean;

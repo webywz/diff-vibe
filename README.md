@@ -95,6 +95,8 @@ Requires **Node.js 18.18+** and `git`. Package: [`@webywz/diff-vibe`](https://ww
 ```bash
 diff-vibe                 # staged + unstaged vs HEAD
 diff-vibe --base main     # vs merge-base of main (typical PR range)
+diff-vibe --out pr.md     # write report to pr.md (stdout empty)
+diff-vibe --out pr.json --json  # write JSON to both pr.json and stdout
 diff-vibe --copy          # copy title + body when a clipboard exists
 diff-vibe --open          # print a suggested `gh pr create` (does not post)
 diff-vibe --create        # run `gh pr create` (needs `gh`)
@@ -190,6 +192,7 @@ Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh
 | `--title-only` | Title only · 只打印标题 |
 | `--body-only` | Markdown body only · 只打印正文 |
 | `--json` | Machine-readable proposal · 机器可读 |
+| `--out <file>` | Write report to file; with `--json`, write to both file and stdout · 写报告到文件；配合 `--json` 时同时写文件与 stdout |
 | `--github` | Emit GitHub Actions `::notice` / `::warning` / `::error` annotations; write `GITHUB_OUTPUT` + `GITHUB_STEP_SUMMARY` when set · 输出 Actions 注解，并在环境变量存在时写 Job 输出与 Summary |
 | `--quiet` | Suppress the pretty terminal report; `--json` / `--github` still emit · 抑制漂亮终端报告 |
 | `--max-annotations <n>` | Cap `--github` annotation lines (default: 20; invalid → UsageError) · 限制注解条数 |
