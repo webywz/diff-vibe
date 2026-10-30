@@ -35,6 +35,7 @@ export {
 } from "./github.ts";
 export { assembleDiff, parseUnifiedDiff } from "./parse-diff.ts";
 export { proposePr } from "./propose.ts";
+export { runSuite } from "./suite.ts";
 export { applyVibe } from "./vibe.ts";
 export type {
   CliOptions,
@@ -44,5 +45,8 @@ export type {
   ProposeOptions,
   DiffFile,
   Vibe,
+  SuiteResult,
+  SuiteItemResult,
+  SuiteStats,
 } from "./types.ts";
 export { COMMIT_TYPES, VIBES } from "./types.ts";

@@ -1,0 +1,19 @@
+diff --git a/src/auth.ts b/src/auth.ts
+index 1234567..abcdefg 100644
+--- a/src/auth.ts
++++ b/src/auth.ts
+@@ -1,5 +1,12 @@
+ export function login(username: string, password: string): boolean {
+-  // TODO: implement
+-  return false;
++  if (!username || !password) {
++    return false;
++  }
++  return true;
++}
++
++export function logout(): void {
++  // Clear session
++  sessionStorage.clear();
++  localStorage.removeItem('token');
+ }

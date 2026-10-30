@@ -21,6 +21,7 @@ import {
 } from "./render.ts";
 import { formatPr, suggestGhPrCreate } from "./format.ts";
 import { createPrWithGh, updatePrWithGh } from "./gh.ts";
+import { runSuite } from "./suite.ts";
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
   let options;
@@ -41,6 +42,10 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   if (options.version) {
     process.stdout.write(`${renderVersion(readVersion())}\n`);
     return 0;
+  }
+
+  if (options.suite) {
+    return runSuiteMode(options);
   }
 
   const piped = !process.stdout.isTTY;
@@ -187,6 +192,34 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       error instanceof GitError || error instanceof Error
         ? error.message
         : "Unexpected error";
+    process.stderr.write(`${renderError(text)}\n`);
+    return 1;
+  }
+}
+
+async function runSuiteMode(options: import("./types.ts").CliOptions): Promise<number> {
+  try {
+    const result = await runSuite({
+      pattern: options.suite!,
+      vibe: options.vibe,
+      locale: options.locale,
+      preferAi: !options.noAi,
+    });
+
+    const output = JSON.stringify(result, null, 2);
+    process.stdout.write(`${output}\n`);
+
+    const threshold = options.failAbove ?? 0;
+    if (result.stats.failed > threshold) {
+      process.stderr.write(
+        `${renderError(`Suite failed: ${result.stats.failed} failures (threshold: ${threshold})`)}\n`,
+      );
+      return 1;
+    }
+
+    return 0;
+  } catch (error) {
+    const text = error instanceof Error ? error.message : "Unexpected error";
     process.stderr.write(`${renderError(text)}\n`);
     return 1;
   }
