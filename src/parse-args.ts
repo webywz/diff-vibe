@@ -35,6 +35,8 @@ Options · 参数
   --locale <locale>         en | zh                        (default: en)
                             PR title + body language · PR 标题与正文语言
   --no-ai                   Skip AI even if an API key is set
+  --no-color                Disable ANSI colors in human-readable output (also respects NO_COLOR)
+                            禁用彩色输出（也支持 NO_COLOR 环境变量）
   -h, --help                Show help
   -v, --version             Show version
 
@@ -45,6 +47,7 @@ Env
   ANTHROPIC_MODEL      Default: claude-3-5-haiku-latest
   VIBE / DIFF_VIBE_VIBE      Default vibe when --vibe is omitted
   VIBE_LOCALE / DIFF_VIBE_LOCALE   Default locale when --locale is omitted
+  NO_COLOR             When set (any non-empty value), disables ANSI colors
 
 With --github, annotations go to stdout (or stderr when combined with --json) so
 PR Checks can surface the proposed title / summary / changes. Job outputs
@@ -95,6 +98,7 @@ export function parseArgs(
     vibe: resolveVibe(env, cwd),
     locale: resolveLocale(env, cwd),
     noAi: false,
+    noColor: shouldDisableColor(env),
     help: false,
     version: false,
     failAbove: 0,
@@ -161,6 +165,10 @@ export function parseArgs(
     }
     if (arg === "--no-ai") {
       options.noAi = true;
+      continue;
+    }
+    if (arg === "--no-color") {
+      options.noColor = true;
       continue;
     }
     if (arg === "--out" || arg.startsWith("--out=")) {
@@ -279,6 +287,10 @@ export class UsageError extends Error {
     super(message);
     this.name = "UsageError";
   }
+}
+
+export function shouldDisableColor(env: NodeJS.ProcessEnv): boolean {
+  return !!env.NO_COLOR;
 }
 
 export function helpText(): string {

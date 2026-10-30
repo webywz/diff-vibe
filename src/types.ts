@@ -87,6 +87,7 @@ export interface CliOptions {
   vibe: Vibe;
   locale: Locale;
   noAi: boolean;
+  noColor: boolean;
   help: boolean;
   version: boolean;
   suite?: string;
