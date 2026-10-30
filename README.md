@@ -108,7 +108,7 @@ Default: **staged + unstaged vs `HEAD`** (`git diff HEAD`). For a PR draft, use 
 ```bash
 git add -p
 npx --yes @webywz/vibe-commit --commit
-npx --yes @webywz/diff-vibe@^0.1.6 --base main --create
+npx --yes @webywz/diff-vibe@^0.1.7 --base main --create
 ```
 
 Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh` snippet live in [`examples/pair-workflow.md`](./examples/pair-workflow.md) and [`examples/gh-pr-create.sh`](./examples/gh-pr-create.sh) — both ship in the npm tarball.
