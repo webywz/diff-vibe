@@ -15,7 +15,7 @@ import {
   textOutput,
 } from "./render.ts";
 import { formatPr, suggestGhPrCreate } from "./format.ts";
-import { createPrWithGh } from "./gh.ts";
+import { createPrWithGh, updatePrWithGh } from "./gh.ts";
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
   let options;
@@ -89,7 +89,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       }
     }
 
-    if (options.open && !options.create) {
+    if (options.open && !options.create && !options.update) {
       if (piped || options.json || options.titleOnly || options.bodyOnly) {
         process.stderr.write(`${suggestGhPrCreate(proposal.title, proposal.body)}\n`);
       } else {
@@ -115,6 +115,27 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       } else {
         process.stderr.write(`${renderError(created.message)}\n`);
         process.stderr.write(`${created.suggestedCommand}\n`);
+        return 1;
+      }
+    }
+
+    if (options.update) {
+      const updated = updatePrWithGh({
+        title: proposal.title,
+        body: proposal.body,
+      });
+      if (updated.ok) {
+        const line = updated.url
+          ? `updated  ${updated.url}`
+          : `updated  ${updated.message}`;
+        if (piped || options.json || options.titleOnly || options.bodyOnly) {
+          process.stderr.write(`${line}\n`);
+        } else {
+          process.stdout.write(`\n  ${line}\n`);
+        }
+      } else {
+        process.stderr.write(`${renderError(updated.message)}\n`);
+        process.stderr.write(`${updated.suggestedCommand}\n`);
         return 1;
       }
     }

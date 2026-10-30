@@ -12,6 +12,9 @@ Options
   --json              Print a machine-readable proposal
   --copy              Copy the output to the clipboard when available
   --open              Print a suggested \`gh pr create\` command
+  --create            Run \`gh pr create\` (needs \`gh\`)
+  --update            Edit the open PR for this branch via \`gh pr edit\`
+  --draft             With --create, open as a draft
   --vibe <style>      calm | punchy | dry            (default: calm)
   --no-ai             Skip AI even if an API key is set
   -h, --help          Show help
@@ -31,6 +34,7 @@ Examples
   diff-vibe --open
   diff-vibe --create
   diff-vibe --create --draft
+  diff-vibe --update
 `;
 
 export function defaultVibeFromEnv(
@@ -51,6 +55,7 @@ export function parseArgs(
     copy: false,
     open: false,
     create: false,
+    update: false,
     draft: false,
     vibe: defaultVibeFromEnv(env),
     noAi: false,
@@ -94,6 +99,10 @@ export function parseArgs(
       options.create = true;
       continue;
     }
+    if (arg === "--update") {
+      options.update = true;
+      continue;
+    }
     if (arg === "--draft") {
       options.draft = true;
       continue;
@@ -131,6 +140,9 @@ export function parseArgs(
 
   if (options.titleOnly && options.bodyOnly) {
     throw new UsageError("Use only one of --title-only or --body-only");
+  }
+  if (options.create && options.update) {
+    throw new UsageError("Use only one of --create or --update");
   }
   if (options.draft && !options.create) {
     throw new UsageError("--draft requires --create");
