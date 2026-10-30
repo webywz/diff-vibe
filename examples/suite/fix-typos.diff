@@ -1,0 +1,24 @@
+diff --git a/README.md b/README.md
+index 9876543..fedcba9 100644
+--- a/README.md
++++ b/README.md
+@@ -1,7 +1,7 @@
+ # My Project
+ 
+-A simle project for testing.
++A simple project for testing.
+ 
+ ## Features
+ 
+diff --git a/docs/guide.md b/docs/guide.md
+index abcd123..efgh456 100644
+--- a/docs/guide.md
++++ b/docs/guide.md
+@@ -5,7 +5,7 @@
+ 1. Install dependencies
+ 2. Run the server
+ 
+-The confgiuration is simple.
++The configuration is simple.
+ 
+ ## Advanced

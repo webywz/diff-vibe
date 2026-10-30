@@ -88,4 +88,27 @@ export interface CliOptions {
   noAi: boolean;
   help: boolean;
   version: boolean;
+  suite?: string;
+  failAbove?: number;
+}
+
+export interface SuiteItemResult {
+  file: string;
+  success: boolean;
+  proposal?: ProposedPr;
+  error?: string;
+}
+
+export interface SuiteStats {
+  total: number;
+  succeeded: number;
+  failed: number;
+  byType: Record<CommitType, number>;
+  withBreaking: number;
+  byEngine: Record<Engine, number>;
+}
+
+export interface SuiteResult {
+  results: SuiteItemResult[];
+  stats: SuiteStats;
 }

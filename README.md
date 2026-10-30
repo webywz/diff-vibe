@@ -90,6 +90,8 @@ Requires **Node.js 18.18+** and `git`. Package: [`@webywz/diff-vibe`](https://ww
 
 ## Quick start · 快速开始
 
+### Single-run mode · 单次模式
+
 ```bash
 diff-vibe                 # staged + unstaged vs HEAD
 diff-vibe --base main     # vs merge-base of main (typical PR range)
@@ -104,6 +106,65 @@ diff-vibe --github --quiet --base main   # Actions annotations (CI)
 Default: **staged + unstaged vs `HEAD`** (`git diff HEAD`). For a PR draft, use `--base main` so commits already on the branch are included. Untracked files are invisible until `git add`.
 
 默认对比 HEAD 上的暂存 + 未暂存。写 PR 用 `--base main`，把已提交的 commit 一并纳入。未跟踪文件需先 `git add`。
+
+### Suite mode (batch) · 批处理模式
+
+Process **multiple `.diff` files** in one run and get **aggregated JSON** with per-item results + stats:
+
+一次处理**多个 `.diff` 文件**，输出**聚合 JSON**（每项结果 + 统计）：
+
+```bash
+diff-vibe --suite examples/suite/           # directory of .diff files
+diff-vibe --suite "diffs/*.diff"            # glob pattern
+diff-vibe --suite diffs/ --fail-above 0     # exit non-zero if any fail
+diff-vibe --suite diffs/ --vibe punchy --locale zh
+```
+
+**Requirements · 要求:**
+
+- **≥2 diff files** required (otherwise error) · 需要 ≥2 个 diff 文件（否则报错）
+- Each `.diff` file = one diff pair · 每个 `.diff` 文件 = 一个 diff pair
+- Outputs JSON only (no pretty terminal report) · 仅输出 JSON（无漂亮终端报告）
+
+**Output schema · 输出格式:**
+
+```json
+{
+  "results": [
+    {
+      "file": "feat-auth.diff",
+      "success": true,
+      "proposal": { "title": "...", "body": "...", "type": "feat", ... }
+    },
+    {
+      "file": "bad.diff",
+      "success": false,
+      "error": "Parse error: ..."
+    }
+  ],
+  "stats": {
+    "total": 2,
+    "succeeded": 1,
+    "failed": 1,
+    "byType": { "feat": 1, "fix": 0, ... },
+    "withBreaking": 0,
+    "byEngine": { "heuristic": 1, "ai": 0 }
+  }
+}
+```
+
+**Fail gate · 失败闸门:**
+
+`--fail-above <n>` (default: `0`) — exit code **1** when `stats.failed > n`.
+
+`--fail-above <n>`（默认 `0`）— 当 `stats.failed > n` 时 exit 1。
+
+**Examples · 示例:**
+
+See [`examples/suite/`](./examples/suite/) for ready-to-run `.diff` files. Suite mode is ideal for CI batch validation, regression tests, or benchmarking proposal quality across many diffs.
+
+参见 [`examples/suite/`](./examples/suite/) 获取可运行示例。批处理模式适合 CI 批量验证、回归测试或多 diff 提案质量基准。
+
 
 ### Pair with vibe-commit · 与 vibe-commit 成对
 
@@ -122,6 +183,8 @@ Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh
 | Flag | What it does · 作用 |
 | --- | --- |
 | `--base [ref]` | Diff vs merge-base of `<ref>`; omit ref to auto-detect `main` / `master` |
+| `--suite <glob\|dir>` | **Batch mode**: process multiple `.diff` files → aggregated JSON with stats · **批处理模式**：处理多个 `.diff` 文件 → 聚合 JSON |
+| `--fail-above <n>` | With `--suite`: exit non-zero if failed count > n (default: 0) · 配合 `--suite`：失败数 > n 时 exit 非 0 |
 | `--title-only` | Title only · 只打印标题 |
 | `--body-only` | Markdown body only · 只打印正文 |
 | `--json` | Machine-readable proposal · 机器可读 |

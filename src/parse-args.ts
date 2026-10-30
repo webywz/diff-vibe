@@ -5,10 +5,15 @@ const HELP = `diff-vibe — stylish PR titles + bodies from a git diff, offline-
 把 git diff 写成有品味的 PR title + body（离线优先）
 
 Usage · 用法
-  diff-vibe [options]
+  diff-vibe [options]                    Single-run mode · 单次模式
+  diff-vibe --suite <glob|dir> [options] Batch mode · 批处理模式
 
 Options · 参数
   --base [ref]              Diff vs merge-base of <ref> (default ref: main/master)
+  --suite <glob|dir>        Batch mode: process multiple .diff files → JSON with stats
+                            批处理模式：处理多个 .diff 文件 → 聚合 JSON
+  --fail-above <n>          With --suite: exit non-zero if failed count > n (default: 0)
+                            配合 --suite：失败数 > n 时 exit 非 0（默认 0）
   --title-only              Print the title only · 只打印标题
   --body-only               Print the markdown body only · 只打印正文
   --json                    Print a machine-readable proposal · 机器可读
@@ -57,6 +62,11 @@ Examples · 示例
   diff-vibe --create
   diff-vibe --create --draft
   diff-vibe --update
+
+Suite mode · 批处理模式
+  diff-vibe --suite examples/suite/
+  diff-vibe --suite "diffs/*.diff" --fail-above 0
+  diff-vibe --suite examples/suite/ --vibe punchy --locale zh
 `;
 
 export function parseArgs(
@@ -81,6 +91,7 @@ export function parseArgs(
     noAi: false,
     help: false,
     version: false,
+    failAbove: 0,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -172,6 +183,17 @@ export function parseArgs(
       options.locale = parseLocale(value);
       continue;
     }
+    if (arg === "--suite" || arg.startsWith("--suite=")) {
+      const value = arg.includes("=") ? arg.slice("--suite=".length) : argv[++i];
+      if (!value?.trim()) throw new UsageError("Missing value for --suite");
+      options.suite = value;
+      continue;
+    }
+    if (arg === "--fail-above" || arg.startsWith("--fail-above=")) {
+      const value = arg.includes("=") ? arg.slice("--fail-above=".length) : argv[++i];
+      options.failAbove = parseFailAbove(value);
+      continue;
+    }
     if (arg.startsWith("-")) {
       throw new UsageError(`Unknown option: ${arg}`);
     }
@@ -186,6 +208,17 @@ export function parseArgs(
   }
   if (options.draft && !options.create) {
     throw new UsageError("--draft requires --create");
+  }
+  if (options.suite) {
+    if (options.base) {
+      throw new UsageError("--suite and --base are mutually exclusive");
+    }
+    if (options.titleOnly || options.bodyOnly) {
+      throw new UsageError("--suite cannot be combined with --title-only or --body-only");
+    }
+    if (options.create || options.update || options.open) {
+      throw new UsageError("--suite cannot be combined with --create, --update, or --open");
+    }
   }
 
   return options;
@@ -217,6 +250,16 @@ export function parseLocale(value: string | undefined): Locale {
     throw new UsageError(`Invalid --locale "${value}". Use: ${LOCALES.join(", ")}`);
   }
   return raw as Locale;
+}
+
+export function parseFailAbove(value: string | undefined): number {
+  const raw = value?.trim();
+  if (!raw) throw new UsageError("Missing value for --fail-above");
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 0) {
+    throw new UsageError("--fail-above must be a non-negative integer");
+  }
+  return n;
 }
 
 export class UsageError extends Error {
