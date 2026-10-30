@@ -93,6 +93,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
             testPlan: proposal.testPlan,
             breaking: proposal.breaking,
             engine: proposal.engine,
+            locale: proposal.locale,
             base: inspected.rangeLabel,
           },
           null,

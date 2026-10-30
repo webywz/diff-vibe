@@ -102,12 +102,29 @@ describe("cli e2e", () => {
       title: string;
       body: string;
       engine: string;
+      locale: string;
       base: string;
     };
     assert.equal(payload.engine, "heuristic");
+    assert.equal(payload.locale, "en");
     assert.equal(payload.base, "HEAD");
     assert.match(payload.title, /^(feat|fix|docs|chore|refactor)\b/);
     assert.match(payload.body, /## Test plan/);
+  });
+
+  it("includes locale in --json output", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+
+    const jsonEn = run(cwd, ["--no-ai", "--json", "--locale", "en"]);
+    assert.equal(jsonEn.status, 0, jsonEn.stderr);
+    const payloadEn = JSON.parse(jsonEn.stdout) as { locale: string };
+    assert.equal(payloadEn.locale, "en");
+
+    const jsonZh = run(cwd, ["--no-ai", "--json", "--locale", "zh"]);
+    assert.equal(jsonZh.status, 0, jsonZh.stderr);
+    const payloadZh = JSON.parse(jsonZh.stdout) as { locale: string };
+    assert.equal(payloadZh.locale, "zh");
   });
 
   it("diffs vs merge-base when --base is set", () => {
