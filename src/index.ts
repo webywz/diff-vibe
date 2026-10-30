@@ -23,6 +23,16 @@ export {
   proposeHeuristic,
 } from "./heuristic.ts";
 export { helpText, parseArgs, UsageError } from "./parse-args.ts";
+export {
+  annotation,
+  appendGitHubJobOutput,
+  appendGitHubStepSummary,
+  escapeData,
+  escapeProperty,
+  formatGitHubAnnotations,
+  formatGitHubStepSummary,
+  proposalAnnotationType,
+} from "./github.ts";
 export { assembleDiff, parseUnifiedDiff } from "./parse-diff.ts";
 export { proposePr } from "./propose.ts";
 export { applyVibe } from "./vibe.ts";

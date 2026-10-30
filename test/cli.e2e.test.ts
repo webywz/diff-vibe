@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { after, describe, it } from "node:test";
@@ -164,6 +164,79 @@ describe("cli e2e", () => {
     const fail = run(cwd);
     assert.equal(fail.status, 1);
     assert.match(fail.stderr, /Not a git repository/);
+  });
+
+
+  it("emits GitHub Actions annotations with --github --quiet", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const result = run(cwd, ["--no-ai", "--github", "--quiet"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /^::(error|warning|notice) /m);
+    assert.match(result.stdout, /diff-vibe · title/);
+    assert.equal(result.stdout.includes("::group::"), false);
+    assert.equal(result.stdout.includes("## Summary"), false);
+  });
+
+  it("keeps --json stdout clean when combined with --github", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const result = run(cwd, ["--no-ai", "--github", "--json"]);
+    assert.equal(result.status, 0, result.stderr);
+    const payload = JSON.parse(result.stdout) as { title: string; engine: string };
+    assert.equal(payload.engine, "heuristic");
+    assert.match(payload.title, /^(feat|fix|docs|chore|refactor)\b/);
+    assert.match(result.stderr, /^::(error|warning|notice) /m);
+  });
+
+  it("honors --max-annotations with --github", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const result = run(cwd, [
+      "--no-ai",
+      "--github",
+      "--quiet",
+      "--max-annotations",
+      "1",
+    ]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim().split("\n").length, 1);
+  });
+
+  it("rejects invalid --max-annotations", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const result = run(cwd, ["--max-annotations", "0"]);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /max-annotations/);
+  });
+
+  it("suppresses the pretty report with --quiet alone", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const result = run(cwd, ["--no-ai", "--quiet"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), "");
+  });
+
+  it("writes GITHUB_OUTPUT and GITHUB_STEP_SUMMARY with --github", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const outDir = mkdtempSync(join(tmpdir(), "diff-vibe-gh-env-"));
+    repos.push(outDir);
+    const outputFile = join(outDir, "github_output");
+    const summaryFile = join(outDir, "step_summary.md");
+    const result = run(cwd, ["--no-ai", "--github", "--quiet"], {
+      GITHUB_OUTPUT: outputFile,
+      GITHUB_STEP_SUMMARY: summaryFile,
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const output = readFileSync(outputFile, "utf8");
+    assert.match(output, /^title=/m);
+    assert.match(output, /^summary=/m);
+    assert.match(output, /^findings=\d+$/m);
+    const summary = readFileSync(summaryFile, "utf8");
+    assert.match(summary, /## diff-vibe/);
   });
 
   it("prints help and version", () => {

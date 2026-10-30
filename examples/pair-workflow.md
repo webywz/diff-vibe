@@ -9,7 +9,7 @@ Use them together on the same branch — offline by default, AI optional.
 Pinned packages for this walkthrough · 本示例钉包版本：
 
 - `@webywz/vibe-commit` (latest companion)
-- `@webywz/diff-vibe@^0.1.7`
+- `@webywz/diff-vibe@^0.1.8`
 
 Requires **Node.js 18.18+**, `git`, and (for open/update) [`gh`](https://cli.github.com/).
 
@@ -30,7 +30,7 @@ Or install once and use the short binary:
 也可全局安装后用短命令：
 
 ```bash
-npm i -g @webywz/vibe-commit @webywz/diff-vibe@^0.1.7
+npm i -g @webywz/vibe-commit @webywz/diff-vibe@^0.1.8
 vibe-commit --commit
 ```
 
@@ -43,16 +43,16 @@ Diff against the PR base (usually `main`) so commits already on the branch are i
 对比 PR 基线（通常是 `main`），把分支上已提交的改动一并纳入：
 
 ```bash
-npx --yes @webywz/diff-vibe@^0.1.7 --base main
-npx --yes @webywz/diff-vibe@^0.1.7 --base main --copy   # clipboard when available · 能复制就复制
+npx --yes @webywz/diff-vibe@^0.1.8 --base main
+npx --yes @webywz/diff-vibe@^0.1.8 --base main --copy   # clipboard when available · 能复制就复制
 ```
 
 Pipe into `gh` without posting yet · 管道进 `gh`（尚未发帖）：
 
 ```bash
 gh pr create \
-  --title "$(npx --yes @webywz/diff-vibe@^0.1.7 --base main --title-only)" \
-  --body-file <(npx --yes @webywz/diff-vibe@^0.1.7 --base main --body-only) \
+  --title "$(npx --yes @webywz/diff-vibe@^0.1.8 --base main --title-only)" \
+  --body-file <(npx --yes @webywz/diff-vibe@^0.1.8 --base main --body-only) \
   --dry-run
 ```
 
@@ -70,13 +70,13 @@ Opt-in flags shell out to `gh`. Nothing is posted without them.
 
 ```bash
 # open a new PR · 开新 PR
-npx --yes @webywz/diff-vibe@^0.1.7 --base main --create
+npx --yes @webywz/diff-vibe@^0.1.8 --base main --create
 
 # draft PR · 草稿 PR
-npx --yes @webywz/diff-vibe@^0.1.7 --base main --create --draft
+npx --yes @webywz/diff-vibe@^0.1.8 --base main --create --draft
 
 # edit the open PR for this branch · 更新当前分支已开 PR
-npx --yes @webywz/diff-vibe@^0.1.7 --base main --update
+npx --yes @webywz/diff-vibe@^0.1.8 --base main --update
 ```
 
 `--create` and `--update` are mutually exclusive. `--draft` only pairs with `--create`.

@@ -4,6 +4,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { copyToClipboard } from "./clipboard.ts";
 import { GitError, inspectDiff } from "./git.ts";
+import {
+  appendGitHubJobOutput,
+  appendGitHubStepSummary,
+  formatGitHubAnnotations,
+} from "./github.ts";
 import { helpText, parseArgs, UsageError } from "./parse-args.ts";
 import { proposePr } from "./propose.ts";
 import {
@@ -50,6 +55,30 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       : options.bodyOnly
         ? "body"
         : "full";
+
+    if (options.github) {
+      const ann = formatGitHubAnnotations(proposal, inspected, {
+        maxAnnotations: options.maxAnnotations,
+      });
+      // Keep --json stdout machine-parseable; annotations ride on stderr.
+      if (options.json) process.stderr.write(ann);
+      else process.stdout.write(ann);
+      try {
+        appendGitHubJobOutput(proposal, inspected);
+      } catch (err) {
+        process.stderr.write(
+          `diff-vibe: GITHUB_OUTPUT skipped (${err instanceof Error ? err.message : err})\n`,
+        );
+      }
+      try {
+        appendGitHubStepSummary(proposal, inspected);
+      } catch (err) {
+        process.stderr.write(
+          `diff-vibe: GITHUB_STEP_SUMMARY skipped (${err instanceof Error ? err.message : err})\n`,
+        );
+      }
+    }
+
     const printable = options.json
       ? `${JSON.stringify(
           {
@@ -72,7 +101,17 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         ? textOutput(proposal, mode)
         : renderProposal(inspected, proposal);
 
-    process.stdout.write(printable);
+    if (options.json) {
+      process.stdout.write(printable);
+    } else if (!options.quiet) {
+      if (options.github) {
+        process.stdout.write("::group::diff-vibe report\n");
+      }
+      process.stdout.write(printable);
+      if (options.github) {
+        process.stdout.write("::endgroup::\n");
+      }
+    }
 
     if (options.copy) {
       const copied = copyToClipboard(
@@ -82,7 +121,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
             ? `${formatPr(proposal)}\n`
             : textOutput(proposal, mode),
       );
-      if (!piped && !options.json) {
+      if (!piped && !options.json && !options.quiet) {
         process.stdout.write(renderCopied(copied));
       } else if (!copied) {
         process.stderr.write(`${renderError("clipboard unavailable")}\n`);
@@ -90,7 +129,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     }
 
     if (options.open && !options.create && !options.update) {
-      if (piped || options.json || options.titleOnly || options.bodyOnly) {
+      if (piped || options.json || options.titleOnly || options.bodyOnly || options.quiet) {
         process.stderr.write(`${suggestGhPrCreate(proposal.title, proposal.body)}\n`);
       } else {
         process.stdout.write(renderGhHint(proposal));
@@ -107,7 +146,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         const line = created.url
           ? `created  ${created.url}`
           : `created  ${created.message}`;
-        if (piped || options.json || options.titleOnly || options.bodyOnly) {
+        if (piped || options.json || options.titleOnly || options.bodyOnly || options.quiet) {
           process.stderr.write(`${line}\n`);
         } else {
           process.stdout.write(`\n  ${line}\n`);
@@ -128,7 +167,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         const line = updated.url
           ? `updated  ${updated.url}`
           : `updated  ${updated.message}`;
-        if (piped || options.json || options.titleOnly || options.bodyOnly) {
+        if (piped || options.json || options.titleOnly || options.bodyOnly || options.quiet) {
           process.stderr.write(`${line}\n`);
         } else {
           process.stdout.write(`\n  ${line}\n`);

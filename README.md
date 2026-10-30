@@ -32,6 +32,7 @@ Package: [`@webywz/diff-vibe`](https://www.npmjs.com/package/@webywz/diff-vibe) 
 | AI optional | OpenAI or Anthropic when a key is set; silent fallback on failure | 有 Key 才走模型，失败静默回退 |
 | Vibes | `calm` · `punchy` · `dry` | 三种文风 |
 | Ship | Print, copy, suggest `gh pr create`, or `--create` / `--update` / `--draft` | 打印、复制、建议命令，或开/更新 PR |
+| Actions | `--github` annotations + job outputs + step summary; `--quiet` / `--max-annotations` | Actions 注解 + Job 输出 + Summary；可静音与限条 |
 
 ---
 
@@ -97,6 +98,7 @@ diff-vibe --open          # print a suggested `gh pr create` (does not post)
 diff-vibe --create        # run `gh pr create` (needs `gh`)
 diff-vibe --create --draft
 diff-vibe --update        # edit open PR for this branch via `gh pr edit`
+diff-vibe --github --quiet --base main   # Actions annotations (CI)
 ```
 
 Default: **staged + unstaged vs `HEAD`** (`git diff HEAD`). For a PR draft, use `--base main` so commits already on the branch are included. Untracked files are invisible until `git add`.
@@ -108,12 +110,12 @@ Default: **staged + unstaged vs `HEAD`** (`git diff HEAD`). For a PR draft, use 
 ```bash
 git add -p
 npx --yes @webywz/vibe-commit --commit
-npx --yes @webywz/diff-vibe@^0.1.7 --base main --create
+npx --yes @webywz/diff-vibe@^0.1.8 --base main --create
 ```
 
-Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh` snippet live in [`examples/pair-workflow.md`](./examples/pair-workflow.md) and [`examples/gh-pr-create.sh`](./examples/gh-pr-create.sh) — both ship in the npm tarball.
+Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh` snippet live in [`examples/pair-workflow.md`](./examples/pair-workflow.md) and [`examples/gh-pr-create.sh`](./examples/gh-pr-create.sh). CI annotation sample: [`examples/github-actions.yml`](./examples/github-actions.yml). All ship in the npm tarball.
 
-那边写 commit，这边写 PR。完整成对流程与可复制 `gh` 片段见 [`examples/`](./examples/)（随 npm 包一起发布）。
+那边写 commit，这边写 PR。完整成对流程、可复制 `gh` 片段与 Actions 示例见 [`examples/`](./examples/)（随 npm 包一起发布）。
 
 ### Flags · 参数
 
@@ -123,6 +125,9 @@ Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh
 | `--title-only` | Title only · 只打印标题 |
 | `--body-only` | Markdown body only · 只打印正文 |
 | `--json` | Machine-readable proposal · 机器可读 |
+| `--github` | Emit GitHub Actions `::notice` / `::warning` / `::error` annotations; write `GITHUB_OUTPUT` + `GITHUB_STEP_SUMMARY` when set · 输出 Actions 注解，并在环境变量存在时写 Job 输出与 Summary |
+| `--quiet` | Suppress the pretty terminal report; `--json` / `--github` still emit · 抑制漂亮终端报告 |
+| `--max-annotations <n>` | Cap `--github` annotation lines (default: 20; invalid → UsageError) · 限制注解条数 |
 | `--copy` | Clipboard when available · 能复制就复制 |
 | `--open` | Print suggested `gh pr create …` (no post) |
 | `--create` | Run `gh pr create` · 真正开 PR（需本机有 `gh`） |
@@ -221,4 +226,5 @@ node dist/cli.js --help
 - npm: [@webywz/diff-vibe](https://www.npmjs.com/package/@webywz/diff-vibe)
 - Companion: [vibe-commit](https://github.com/webywz/vibe-commit)
 - Pair workflow: [examples/pair-workflow.md](./examples/pair-workflow.md)
+- GitHub Actions: [examples/github-actions.yml](./examples/github-actions.yml)
 - License: [MIT](./LICENSE) © webywz
