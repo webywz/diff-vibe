@@ -109,6 +109,10 @@ export function suggestGhPrCreate(title: string, body: string): string {
   return `gh pr create --title ${shQuote(title)} --body ${shQuote(body)}`;
 }
 
+export function suggestGhPrEdit(title: string, body: string): string {
+  return `gh pr edit --title ${shQuote(title)} --body ${shQuote(body)}`;
+}
+
 export function parseAiDraft(
   text: string,
   engine: Engine = "ai",

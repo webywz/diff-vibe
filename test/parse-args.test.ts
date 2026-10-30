@@ -16,6 +16,7 @@ describe("parseArgs", () => {
     assert.equal(options.copy, false);
     assert.equal(options.open, false);
     assert.equal(options.create, false);
+    assert.equal(options.update, false);
     assert.equal(options.draft, false);
     assert.equal(options.noAi, false);
     assert.equal(options.base, undefined);
@@ -45,6 +46,7 @@ describe("parseArgs", () => {
         copy: options.copy,
         open: options.open,
         create: options.create,
+        update: options.update,
         draft: options.draft,
         vibe: options.vibe,
         noAi: options.noAi,
@@ -56,11 +58,21 @@ describe("parseArgs", () => {
         copy: true,
         open: true,
         create: true,
+        update: false,
         draft: true,
         vibe: "punchy",
         noAi: true,
       },
     );
+  });
+
+  it("parses --update and rejects create+update / draft without create", () => {
+    const options = parseArgs(["--update"], {});
+    assert.equal(options.update, true);
+    assert.equal(options.create, false);
+    assert.throws(() => parseArgs(["--create", "--update"], {}), UsageError);
+    assert.throws(() => parseArgs(["--update", "--draft"], {}), UsageError);
+    assert.throws(() => parseArgs(["--draft"], {}), UsageError);
   });
 
   it("treats bare --base as auto-detect", () => {

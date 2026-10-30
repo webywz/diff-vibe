@@ -20,7 +20,7 @@ Package: `@webywz/diff-vibe` · CLI: `diff-vibe` · Node.js 18.18+ · requires `
 | Offline first | Heuristic always on — paths, hunks, identifiers → type / scope / subject + markdown body | 启发式始终可用，从路径与 diff 推断 type / scope / subject 与正文 |
 | AI optional | OpenAI or Anthropic when a key is set; silent fallback on failure | 有 Key 才走模型，失败静默回退 |
 | Vibes | `calm` · `punchy` · `dry` | 三种文风 |
-| Ship | Print, copy, suggest `gh pr create`, or `--create` / `--draft` | 打印、复制、建议命令，或真正开 PR |
+| Ship | Print, copy, suggest `gh pr create`, or `--create` / `--update` / `--draft` | 打印、复制、建议命令，或开/更新 PR |
 
 ---
 
@@ -85,6 +85,7 @@ diff-vibe --copy          # copy title + body when a clipboard exists
 diff-vibe --open          # print a suggested `gh pr create` (does not post)
 diff-vibe --create        # run `gh pr create` (needs `gh`)
 diff-vibe --create --draft
+diff-vibe --update        # edit open PR for this branch via `gh pr edit`
 ```
 
 Default: **staged + unstaged vs `HEAD`** (`git diff HEAD`). For a PR draft, use `--base main` so commits already on the branch are included. Untracked files are invisible until `git add`.
@@ -102,7 +103,8 @@ Default: **staged + unstaged vs `HEAD`** (`git diff HEAD`). For a PR draft, use 
 | `--copy` | Clipboard when available · 能复制就复制 |
 | `--open` | Print suggested `gh pr create …` (no post) |
 | `--create` | Run `gh pr create` · 真正开 PR（需本机有 `gh`） |
-| `--draft` | With `--create`, open a draft · 配合 `--create` 开草稿 |
+| `--update` | Edit open PR for this branch (`gh pr edit`) · 更新当前分支已开 PR；无 PR 时请用 `--create` |
+| `--draft` | With `--create`, open a draft · 仅配合 `--create`；与 `--update` 互斥 |
 | `--vibe <style>` | `calm` \| `punchy` \| `dry` (default: `calm`) |
 | `--no-ai` | Skip the API even if a key is set · 有 Key 也不走 AI |
 | `-h`, `--help` | Help |
@@ -127,9 +129,9 @@ Default: **staged + unstaged vs `HEAD`** (`git diff HEAD`). For a PR draft, use 
    - `fix` / `bug` / `crash` in comments → `fix`
    - new files / `export function` → `feat`
 3. If `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` is set, ask the model; **fall back to the heuristic** on any failure.
-4. Print a proposal. `--open` only prints a command. `--create` (opt-in) shells out to `gh pr create` — nothing is posted without that flag.
+4. Print a proposal. `--open` only prints a command. `--create` / `--update` (opt-in) shell out to `gh` — nothing is posted or edited without those flags. `--create` and `--update` are mutually exclusive; `--draft` only pairs with `--create`.
 
-启发式始终可用；配置了 API Key 才走模型，失败自动回退。`--create` 才会真正发 PR。
+启发式始终可用；配置了 API Key 才走模型，失败自动回退。`--create` 开新 PR，`--update` 编辑当前分支已开 PR；二者互斥。
 
 ---
 

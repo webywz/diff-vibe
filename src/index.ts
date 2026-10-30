@@ -7,6 +7,7 @@ export {
   normalizeSubject,
   parseAiDraft,
   suggestGhPrCreate,
+  suggestGhPrEdit,
 } from "./format.ts";
 export {
   GitError,
