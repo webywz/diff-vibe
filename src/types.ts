@@ -84,6 +84,8 @@ export interface CliOptions {
   update: boolean;
   draft: boolean;
   out?: string;
+  /** `true` = HTML on stdout; string = write that path. */
+  html?: string | true;
   vibe: Vibe;
   locale: Locale;
   noAi: boolean;

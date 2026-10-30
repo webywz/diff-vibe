@@ -33,6 +33,7 @@ Package: [`@webywz/diff-vibe`](https://www.npmjs.com/package/@webywz/diff-vibe) 
 | Vibes | `calm` · `punchy` · `dry` | 三种文风 |
 | Ship | Print, copy, suggest `gh pr create`, or `--create` / `--update` / `--draft` | 打印、复制、建议命令，或开/更新 PR |
 | Actions | `--github` annotations + job outputs + step summary; `--quiet` / `--max-annotations` | Actions 注解 + Job 输出 + Summary；可静音与限条 |
+| HTML | `--html [path]` self-contained offline report (title / summary / body / vibe / stats) | `--html [path]` 离线自包含报告（标题 / 摘要 / 正文 / vibe / 统计） |
 
 ---
 
@@ -97,6 +98,8 @@ diff-vibe                 # staged + unstaged vs HEAD
 diff-vibe --base main     # vs merge-base of main (typical PR range)
 diff-vibe --out pr.md     # write report to pr.md (stdout empty)
 diff-vibe --out pr.json --json  # write JSON to both pr.json and stdout
+diff-vibe --html          # self-contained HTML report on stdout
+diff-vibe --html report.html  # write HTML to file (stdout empty)
 diff-vibe --copy          # copy title + body when a clipboard exists
 diff-vibe --open          # print a suggested `gh pr create` (does not post)
 diff-vibe --create        # run `gh pr create` (needs `gh`)
@@ -193,6 +196,7 @@ Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh
 | `--title-only` | Title only · 只打印标题 |
 | `--body-only` | Markdown body only · 只打印正文 |
 | `--json` | Machine-readable proposal · 机器可读 |
+| `--html [path]` | Self-contained HTML report (stdout, or write to path; offline, no CDN). Cannot share stdout with `--json` · 自包含 HTML 报告（stdout 或写入路径；离线、无 CDN）。不能与 `--json` 同时占用 stdout |
 | `--out <file>` | Write report to file; with `--json`, write to both file and stdout · 写报告到文件；配合 `--json` 时同时写文件与 stdout |
 | `--github` | Emit GitHub Actions `::notice` / `::warning` / `::error` annotations; write `GITHUB_OUTPUT` + `GITHUB_STEP_SUMMARY` when set · 输出 Actions 注解，并在环境变量存在时写 Job 输出与 Summary |
 | `--quiet` | Suppress the pretty terminal report; `--json` / `--github` still emit · 抑制漂亮终端报告 |
