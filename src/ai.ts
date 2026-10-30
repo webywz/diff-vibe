@@ -2,6 +2,7 @@ import { formatBody, formatTitle, parseAiDraft } from "./format.ts";
 import type {
   CommitType,
   GitDiff,
+  Locale,
   ProposedPr,
   Vibe,
 } from "./types.ts";
@@ -12,6 +13,7 @@ const FETCH_TIMEOUT_MS = 12_000;
 export interface AiContext {
   diff: GitDiff;
   vibe: Vibe;
+  locale: Locale;
   type?: CommitType;
   scope?: string;
 }
@@ -55,7 +57,7 @@ async function completeOpenAi(
       model,
       temperature: context.vibe === "punchy" ? 0.7 : 0.2,
       messages: [
-        { role: "system", content: systemPrompt(context.vibe) },
+        { role: "system", content: systemPrompt(context.vibe, context.locale) },
         { role: "user", content: userPrompt(context) },
       ],
     }),
@@ -85,7 +87,7 @@ async function completeAnthropic(
       model,
       max_tokens: 1024,
       temperature: context.vibe === "punchy" ? 0.7 : 0.2,
-      system: systemPrompt(context.vibe),
+      system: systemPrompt(context.vibe, context.locale),
       messages: [{ role: "user", content: userPrompt(context) }],
     }),
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
@@ -107,7 +109,7 @@ function hydrateProposal(
 
   const type = context.type ?? parsed.type ?? "feat";
   const scope = context.scope ?? parsed.scope;
-  const subject = parsed.subject || "update project files";
+  const subject = parsed.subject || (context.locale === "zh" ? "更新项目文件" : "update project files");
   const breaking = parsed.breaking ?? false;
   const title = formatTitle({
     type,
@@ -119,9 +121,12 @@ function hydrateProposal(
   const changes = parsed.changes?.length
     ? parsed.changes
     : context.diff.files.slice(0, 8).map((file) => `\`${file.path}\``);
+  const defaultTestPlan = context.locale === "zh" 
+    ? "重读 diff，对主路径进行完整性检查。"
+    : "Re-read the diff and sanity-check the main path.";
   const testPlan = parsed.testPlan?.length
     ? parsed.testPlan
-    : ["Re-read the diff and sanity-check the main path."];
+    : [defaultTestPlan];
   const body = formatBody({ summary, changes, testPlan });
   return {
     title: parsed.title && looksLikeTitle(parsed.title) ? parsed.title : title,
@@ -134,6 +139,7 @@ function hydrateProposal(
     testPlan,
     breaking,
     engine: "ai",
+    locale: context.locale,
   };
 }
 
@@ -141,20 +147,24 @@ function looksLikeTitle(value: string): boolean {
   return value.length > 0 && value.length <= 90 && !value.includes("\n");
 }
 
-function systemPrompt(vibe: Vibe): string {
+function systemPrompt(vibe: Vibe, locale: Locale): string {
   const vibeLine =
     vibe === "punchy"
       ? "Tone: a little personality, still safe for a real repo. No memes, no emoji."
       : vibe === "dry"
         ? "Tone: as short as possible. No filler."
         : "Tone: clear, professional, imperative mood.";
+  const langLine = locale === "zh"
+    ? "Language: Write the PR subject, summary, changes, and testPlan in Chinese (简体中文)."
+    : "Language: Write in English.";
   return `You write GitHub pull request titles and bodies from a git diff.
 Return JSON only, no markdown fences:
 {"title":"type(scope): subject","summary":"...","changes":["..."],"testPlan":["..."]}
 Title: conventional commits, lowercase subject, no trailing period, <= 72 chars.
 Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore
 Summary: 1-2 sentences. Changes: short file-level bullets. Test plan: 1-3 concrete checks.
-${vibeLine}`;
+${vibeLine}
+${langLine}`;
 }
 
 function userPrompt(context: AiContext): string {

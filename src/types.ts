@@ -1,6 +1,9 @@
 export const VIBES = ["calm", "punchy", "dry"] as const;
 export type Vibe = (typeof VIBES)[number];
 
+export const LOCALES = ["en", "zh"] as const;
+export type Locale = (typeof LOCALES)[number];
+
 export const COMMIT_TYPES = [
   "feat",
   "fix",
@@ -50,12 +53,14 @@ export interface ProposedPr {
   testPlan: string[];
   breaking: boolean;
   engine: Engine;
+  locale: Locale;
 }
 
 export interface ProposeOptions {
   type?: CommitType;
   scope?: string;
   vibe: Vibe;
+  locale: Locale;
   preferAi?: boolean;
 }
 
@@ -79,6 +84,7 @@ export interface CliOptions {
   update: boolean;
   draft: boolean;
   vibe: Vibe;
+  locale: Locale;
   noAi: boolean;
   help: boolean;
   version: boolean;
