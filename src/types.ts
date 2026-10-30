@@ -72,6 +72,8 @@ export interface CliOptions {
   json: boolean;
   copy: boolean;
   open: boolean;
+  create: boolean;
+  draft: boolean;
   vibe: Vibe;
   noAi: boolean;
   help: boolean;
