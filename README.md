@@ -116,6 +116,8 @@ Process **multiple `.diff` files** in one run and get **aggregated JSON** with p
 ```bash
 diff-vibe --suite examples/suite/           # directory of .diff files
 diff-vibe --suite "diffs/*.diff"            # glob pattern
+diff-vibe --suite "examples/{a,b}/*.diff"   # brace expansion
+diff-vibe --suite "suite/{good,bad}.diff"   # specific files with braces
 diff-vibe --suite diffs/ --fail-above 0     # exit non-zero if any fail
 diff-vibe --suite diffs/ --vibe punchy --locale zh
 ```

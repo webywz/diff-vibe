@@ -11,7 +11,9 @@ Usage · 用法
 Options · 参数
   --base [ref]              Diff vs merge-base of <ref> (default ref: main/master)
   --suite <glob|dir>        Batch mode: process multiple .diff files → JSON with stats
+                            Supports brace expansion: {a,b} expands to a and b
                             批处理模式：处理多个 .diff 文件 → 聚合 JSON
+                            支持大括号扩展：{a,b} 展开为 a 和 b
   --fail-above <n>          With --suite: exit non-zero if failed count > n (default: 0)
                             配合 --suite：失败数 > n 时 exit 非 0（默认 0）
   --title-only              Print the title only · 只打印标题
@@ -66,6 +68,8 @@ Examples · 示例
 Suite mode · 批处理模式
   diff-vibe --suite examples/suite/
   diff-vibe --suite "diffs/*.diff" --fail-above 0
+  diff-vibe --suite "examples/{a,b}/*.diff"
+  diff-vibe --suite "suite/{good,bad}.diff"
   diff-vibe --suite examples/suite/ --vibe punchy --locale zh
 `;
 
