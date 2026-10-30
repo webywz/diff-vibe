@@ -1,6 +1,6 @@
 {
   "name": "@webywz/diff-vibe",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Turn a git diff into a sharp PR title and markdown body. Offline-first, AI-optional.",
   "keywords": [
     "git",
@@ -40,11 +40,12 @@
   "files": [
     "dist",
     "!dist/**/*.map",
+    "examples",
     "README.md",
     "LICENSE"
   ],
   "engines": {
-    "node": ">=18.18"
+    "node": ">=18.18.0"
   },
   "scripts": {
     "build": "tsc && node -e \"require('fs').chmodSync('dist/cli.js', 0o755)\"",
