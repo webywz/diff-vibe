@@ -141,6 +141,38 @@ describe("parseArgs", () => {
   });
 });
 
+describe("parseArgs --html", () => {
+  it("parses --html as stdout or optional path", () => {
+    assert.equal(parseArgs(["--html"], {}).html, true);
+    assert.equal(parseArgs(["--html", "--quiet"], {}).html, true);
+    assert.equal(parseArgs(["--html", "report.html"], {}).html, "report.html");
+    assert.equal(parseArgs(["--html=report.html"], {}).html, "report.html");
+    assert.equal(parseArgs(["--html="], {}).html, true);
+  });
+
+  it("rejects --html with --json or --suite", () => {
+    assert.throws(
+      () => parseArgs(["--html", "--json"], {}),
+      /cannot be combined with --json/,
+    );
+    assert.throws(
+      () => parseArgs(["--html", "out.html", "--json"], {}),
+      /cannot be combined with --json/,
+    );
+    assert.throws(
+      () => parseArgs(["--suite", "diffs/", "--html"], {}),
+      /cannot be combined with --suite/,
+    );
+  });
+
+  it("documents --html in help", () => {
+    const help = helpText();
+    assert.match(help, /--html \[path\]/);
+    assert.match(help, /Self-contained HTML report/);
+    assert.match(help, /--html and --json cannot share stdout/);
+  });
+});
+
 
 describe("parseArgs github / quiet / max-annotations", () => {
   it("parses --github, --quiet, and --max-annotations", () => {

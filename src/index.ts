@@ -33,6 +33,7 @@ export {
   formatGitHubStepSummary,
   proposalAnnotationType,
 } from "./github.ts";
+export { escapeHtml, formatHtml } from "./html.ts";
 export { assembleDiff, parseUnifiedDiff } from "./parse-diff.ts";
 export { proposePr } from "./propose.ts";
 export { runSuite } from "./suite.ts";

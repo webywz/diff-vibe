@@ -19,6 +19,8 @@ Options · 参数
   --title-only              Print the title only · 只打印标题
   --body-only               Print the markdown body only · 只打印正文
   --json                    Print a machine-readable proposal · 机器可读
+  --html [path]             Self-contained HTML report (stdout, or write to path; offline, no CDN)
+                            自包含 HTML 报告（stdout，或写入路径；离线，无 CDN）
   --out <file>              Write to file; with --json also prints to stdout
                             写入文件；配合 --json 时也打印到 stdout
   --github                  Emit GitHub Actions annotations (::notice/warning/error)
@@ -49,20 +51,24 @@ Env
   VIBE_LOCALE / DIFF_VIBE_LOCALE   Default locale when --locale is omitted
   NO_COLOR             When set (any non-empty value), disables ANSI colors
 
-With --github, annotations go to stdout (or stderr when combined with --json) so
+With --github, annotations go to stdout (or stderr when combined with --json / --html) so
 PR Checks can surface the proposed title / summary / changes. Job outputs
 title/summary/type/breaking/engine/base/findings are written when GITHUB_OUTPUT
 is set (findings = changes.length). A short Markdown job summary is appended when
 GITHUB_STEP_SUMMARY is set. --quiet hides the pretty report only.
+--html and --json cannot share stdout; pick one primary export.
 
-配合 --github 时注解走 stdout（与 --json 联用则走 stderr，保持 JSON 干净）。
+配合 --github 时注解走 stdout（与 --json / --html 联用则走 stderr，保持 JSON 干净）。
 有 GITHUB_OUTPUT 时写入 title/summary 等字段；有 GITHUB_STEP_SUMMARY 时追加 Job Summary。
 --quiet 只隐藏漂亮终端报告。
+--html 与 --json 不能同时占用 stdout；二选一。
 
 Examples · 示例
   diff-vibe
   diff-vibe --base main --vibe punchy
   diff-vibe --json
+  diff-vibe --html
+  diff-vibe --html report.html
   diff-vibe --github --quiet --base main
   diff-vibe --github --json --max-annotations 10
   diff-vibe --open
@@ -177,6 +183,21 @@ export function parseArgs(
       options.out = value;
       continue;
     }
+    if (arg === "--html") {
+      const next = argv[i + 1];
+      if (next && !next.startsWith("-")) {
+        options.html = next;
+        i += 1;
+      } else {
+        options.html = true;
+      }
+      continue;
+    }
+    if (arg.startsWith("--html=")) {
+      const inline = arg.slice("--html=".length);
+      options.html = inline === "" ? true : inline;
+      continue;
+    }
     if (arg === "--base" || arg.startsWith("--base=")) {
       if (arg.startsWith("--base=")) {
         const value = arg.slice("--base=".length).trim();
@@ -229,6 +250,9 @@ export function parseArgs(
   if (options.draft && !options.create) {
     throw new UsageError("--draft requires --create");
   }
+  if (options.html && options.json) {
+    throw new UsageError("--html cannot be combined with --json (choose one primary export)");
+  }
   if (options.suite) {
     if (options.base) {
       throw new UsageError("--suite and --base are mutually exclusive");
@@ -238,6 +262,9 @@ export function parseArgs(
     }
     if (options.create || options.update || options.open) {
       throw new UsageError("--suite cannot be combined with --create, --update, or --open");
+    }
+    if (options.html) {
+      throw new UsageError("--html cannot be combined with --suite (suite is JSON-only)");
     }
   }
 

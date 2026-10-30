@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { copyToClipboard } from "./clipboard.ts";
@@ -21,6 +21,7 @@ import {
 } from "./render.ts";
 import { formatPr, suggestGhPrCreate } from "./format.ts";
 import { createPrWithGh, updatePrWithGh } from "./gh.ts";
+import { formatHtml } from "./html.ts";
 import { runSuite } from "./suite.ts";
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
@@ -62,12 +63,19 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         ? "body"
         : "full";
 
+    const htmlOnStdout = options.html === true;
+    const htmlPath = typeof options.html === "string" ? options.html : undefined;
+    const html =
+      options.html !== undefined
+        ? formatHtml(inspected, proposal, { vibe: options.vibe })
+        : undefined;
+
     if (options.github) {
       const ann = formatGitHubAnnotations(proposal, inspected, {
         maxAnnotations: options.maxAnnotations,
       });
-      // Keep --json stdout machine-parseable; annotations ride on stderr.
-      if (options.json) process.stderr.write(ann);
+      // Keep --json / --html stdout parseable; annotations ride on stderr.
+      if (options.json || htmlOnStdout) process.stderr.write(ann);
       else process.stdout.write(ann);
       try {
         appendGitHubJobOutput(proposal, inspected);
@@ -121,23 +129,35 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         );
         return 1;
       }
-      // With --json, also write to stdout
-      if (options.json) {
-        process.stdout.write(printable);
+    }
+
+    if (htmlPath && html !== undefined) {
+      try {
+        mkdirSync(dirname(htmlPath), { recursive: true });
+        const payload = html.endsWith("\n") ? html : `${html}\n`;
+        writeFileSync(htmlPath, payload, "utf8");
+        if (!options.quiet) {
+          process.stderr.write(`wrote html report to ${htmlPath}\n`);
+        }
+      } catch (err) {
+        process.stderr.write(
+          `${renderError(`Failed to write ${htmlPath}: ${err instanceof Error ? err.message : err}`, { noColor: options.noColor })}\n`,
+        );
+        return 1;
       }
-      // Otherwise stdout stays empty (file only)
-    } else {
-      // Original behavior when --out is not set
-      if (options.json) {
-        process.stdout.write(printable);
-      } else if (!options.quiet) {
-        if (options.github) {
-          process.stdout.write("::group::diff-vibe report\n");
-        }
-        process.stdout.write(printable);
-        if (options.github) {
-          process.stdout.write("::endgroup::\n");
-        }
+    }
+
+    if (options.json) {
+      process.stdout.write(printable);
+    } else if (htmlOnStdout && html !== undefined) {
+      process.stdout.write(html.endsWith("\n") ? html : `${html}\n`);
+    } else if (!options.out && !htmlPath && !options.quiet) {
+      if (options.github) {
+        process.stdout.write("::group::diff-vibe report\n");
+      }
+      process.stdout.write(printable);
+      if (options.github) {
+        process.stdout.write("::endgroup::\n");
       }
     }
 
