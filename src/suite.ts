@@ -68,21 +68,62 @@ export async function runSuite(
 }
 
 export function resolveDiffFiles(pattern: string, cwd: string): string[] {
-  const absPattern = isAbsolute(pattern) ? pattern : join(cwd, pattern);
+  const expanded = expandBraces(pattern);
+  const allFiles = new Set<string>();
 
-  try {
-    const stats = statSync(absPattern);
-    if (stats.isDirectory()) {
-      return findDiffsInDirectory(absPattern);
+  for (const pat of expanded) {
+    const absPattern = isAbsolute(pat) ? pat : join(cwd, pat);
+
+    try {
+      const stats = statSync(absPattern);
+      if (stats.isDirectory()) {
+        findDiffsInDirectory(absPattern).forEach((f) => allFiles.add(f));
+        continue;
+      }
+      if (stats.isFile() && absPattern.endsWith(".diff")) {
+        allFiles.add(absPattern);
+        continue;
+      }
+    } catch {
+      // Not a valid path, try as glob
     }
-    if (stats.isFile() && absPattern.endsWith(".diff")) {
-      return [absPattern];
-    }
-  } catch {
-    // Not a valid path, try as glob
+
+    findDiffsByGlob(pat, cwd).forEach((f) => allFiles.add(f));
   }
 
-  return findDiffsByGlob(pattern, cwd);
+  return [...allFiles].sort();
+}
+
+function expandBraces(pattern: string): string[] {
+  const results: string[] = [];
+  const queue: string[] = [pattern];
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const match = current.match(/\{([^{}]*)\}/);
+
+    if (!match) {
+      results.push(current);
+      continue;
+    }
+
+    const [fullMatch, content] = match;
+    const start = match.index!;
+    const prefix = current.slice(0, start);
+    const suffix = current.slice(start + fullMatch.length);
+
+    if (!content || content.trim() === "") {
+      queue.push(prefix + suffix);
+      continue;
+    }
+
+    const parts = content.split(",").map((p) => p.trim());
+    for (const part of parts) {
+      queue.push(prefix + part + suffix);
+    }
+  }
+
+  return results.length > 0 ? results : [pattern];
 }
 
 function findDiffsInDirectory(dir: string): string[] {

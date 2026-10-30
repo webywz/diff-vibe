@@ -201,4 +201,102 @@ describe("suite", () => {
       }
     }
   });
+
+  it("expands simple braces {a,b}", async () => {
+    const dir = makeTempSuite();
+    const subA = join(dir, "a");
+    const subB = join(dir, "b");
+    mkdirSync(subA, { recursive: true });
+    mkdirSync(subB, { recursive: true });
+    writeFileSync(join(subA, "one.diff"), FEAT_DIFF);
+    writeFileSync(join(subB, "two.diff"), FIX_DIFF);
+
+    const result = await runSuite({
+      pattern: `${dir}/{a,b}/*.diff`,
+      vibe: "calm",
+      locale: "en",
+      preferAi: false,
+    });
+
+    assert.equal(result.results.length, 2);
+    assert.equal(result.stats.succeeded, 2);
+  });
+
+  it("expands nested braces", async () => {
+    const dir = makeTempSuite();
+    const subA = join(dir, "a");
+    const subB = join(dir, "b");
+    const subC = join(dir, "c");
+    mkdirSync(subA, { recursive: true });
+    mkdirSync(subB, { recursive: true });
+    mkdirSync(subC, { recursive: true });
+    writeFileSync(join(subA, "feat.diff"), FEAT_DIFF);
+    writeFileSync(join(subB, "fix.diff"), FIX_DIFF);
+    writeFileSync(join(subC, "test.diff"), TEST_DIFF);
+
+    const result = await runSuite({
+      pattern: `${dir}/{a,{b,c}}/*.diff`,
+      vibe: "calm",
+      locale: "en",
+      preferAi: false,
+    });
+
+    assert.equal(result.results.length, 3);
+    assert.equal(result.stats.succeeded, 3);
+  });
+
+  it("handles empty braces gracefully", async () => {
+    const dir = makeTempSuite();
+    writeFileSync(join(dir, "one.diff"), FEAT_DIFF);
+    writeFileSync(join(dir, "two.diff"), FIX_DIFF);
+
+    const result = await runSuite({
+      pattern: `${dir}{}/*.diff`,
+      vibe: "calm",
+      locale: "en",
+      preferAi: false,
+    });
+
+    assert.equal(result.results.length, 2);
+  });
+
+  it("supports brace expansion with specific filenames", async () => {
+    const dir = makeTempSuite();
+    writeFileSync(join(dir, "good.diff"), FEAT_DIFF);
+    writeFileSync(join(dir, "bad.diff"), FIX_DIFF);
+    writeFileSync(join(dir, "other.diff"), TEST_DIFF);
+
+    const result = await runSuite({
+      pattern: `${dir}/{good,bad}.diff`,
+      vibe: "calm",
+      locale: "en",
+      preferAi: false,
+    });
+
+    assert.equal(result.results.length, 2);
+    const files = result.results.map((r) => r.file).sort();
+    assert(files.some((f) => f.endsWith("good.diff")));
+    assert(files.some((f) => f.endsWith("bad.diff")));
+  });
+
+  it("combines braces with wildcards", async () => {
+    const dir = makeTempSuite();
+    const feat = join(dir, "feat");
+    const fix = join(dir, "fix");
+    mkdirSync(feat, { recursive: true });
+    mkdirSync(fix, { recursive: true });
+    writeFileSync(join(feat, "auth.diff"), FEAT_DIFF);
+    writeFileSync(join(feat, "api.diff"), FIX_DIFF);
+    writeFileSync(join(fix, "typo.diff"), TEST_DIFF);
+
+    const result = await runSuite({
+      pattern: `${dir}/{feat,fix}/*.diff`,
+      vibe: "calm",
+      locale: "en",
+      preferAi: false,
+    });
+
+    assert(result.results.length >= 2);
+    assert.equal(result.stats.succeeded, result.results.length);
+  });
 });
