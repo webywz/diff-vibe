@@ -119,6 +119,23 @@ describe("parseArgs", () => {
     );
     assert.throws(() => parseArgs(["--draft"], {}), UsageError);
   });
+
+  it("parses --out flag", () => {
+    const withSpace = parseArgs(["--out", "report.md"], {});
+    assert.equal(withSpace.out, "report.md");
+
+    const withEquals = parseArgs(["--out=output.json"], {});
+    assert.equal(withEquals.out, "output.json");
+  });
+
+  it("rejects --out without value", () => {
+    assert.throws(() => parseArgs(["--out"], {}), UsageError);
+    assert.throws(() => parseArgs(["--out="], {}), UsageError);
+  });
+
+  it("rejects --out with --suite", () => {
+    assert.throws(() => parseArgs(["--suite", "diffs/", "--out", "report.md"], {}), UsageError);
+  });
 });
 
 

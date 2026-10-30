@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readFileSync, realpathSync } from "node:fs";
+import { readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { copyToClipboard } from "./clipboard.ts";
@@ -108,15 +108,36 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         ? textOutput(proposal, mode)
         : renderProposal(inspected, proposal);
 
-    if (options.json) {
-      process.stdout.write(printable);
-    } else if (!options.quiet) {
-      if (options.github) {
-        process.stdout.write("::group::diff-vibe report\n");
+    if (options.out) {
+      // Write to file
+      try {
+        writeFileSync(options.out, printable, "utf8");
+        if (!options.quiet) {
+          process.stderr.write(`wrote report to ${options.out}\n`);
+        }
+      } catch (err) {
+        process.stderr.write(
+          `${renderError(`Failed to write ${options.out}: ${err instanceof Error ? err.message : err}`)}\n`,
+        );
+        return 1;
       }
-      process.stdout.write(printable);
-      if (options.github) {
-        process.stdout.write("::endgroup::\n");
+      // With --json, also write to stdout
+      if (options.json) {
+        process.stdout.write(printable);
+      }
+      // Otherwise stdout stays empty (file only)
+    } else {
+      // Original behavior when --out is not set
+      if (options.json) {
+        process.stdout.write(printable);
+      } else if (!options.quiet) {
+        if (options.github) {
+          process.stdout.write("::group::diff-vibe report\n");
+        }
+        process.stdout.write(printable);
+        if (options.github) {
+          process.stdout.write("::endgroup::\n");
+        }
       }
     }
 

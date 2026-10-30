@@ -266,4 +266,46 @@ describe("cli e2e", () => {
     assert.equal(version.status, 0);
     assert.match(version.stdout, /diff-vibe \d+\.\d+\.\d+/);
   });
+
+  it("writes report to file with --out (single mode)", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const outFile = join(cwd, "report.md");
+    const result = run(cwd, ["--no-ai", "--out", outFile]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), "", "stdout should be empty with --out");
+    assert.match(result.stderr, /wrote report to/);
+    const content = readFileSync(outFile, "utf8");
+    assert.match(content, /feat\(auth\): /);
+    assert.match(content, /## Summary/);
+    assert.match(content, /## Changes/);
+  });
+
+  it("writes JSON to both file and stdout with --out --json", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const outFile = join(cwd, "report.json");
+    const result = run(cwd, ["--no-ai", "--out", outFile, "--json"]);
+    assert.equal(result.status, 0, result.stderr);
+    const stdoutPayload = JSON.parse(result.stdout) as { title: string; engine: string };
+    assert.equal(stdoutPayload.engine, "heuristic");
+    assert.match(stdoutPayload.title, /^(feat|fix|docs|chore|refactor)\b/);
+    const fileContent = readFileSync(outFile, "utf8");
+    const filePayload = JSON.parse(fileContent) as { title: string; engine: string };
+    assert.equal(filePayload.engine, "heuristic");
+    assert.match(filePayload.title, /^(feat|fix|docs|chore|refactor)\b/);
+    assert.deepEqual(stdoutPayload, filePayload, "file and stdout JSON should match");
+  });
+
+  it("suppresses 'wrote report to' message with --out --quiet", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const outFile = join(cwd, "report.md");
+    const result = run(cwd, ["--no-ai", "--out", outFile, "--quiet"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), "");
+    assert.equal(result.stderr.includes("wrote report to"), false);
+    const content = readFileSync(outFile, "utf8");
+    assert.match(content, /feat\(auth\): /);
+  });
 });
