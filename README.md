@@ -1,15 +1,26 @@
 # diff-vibe
 
-**Stylish PR titles and bodies from a git diff. Offline-first. AI-optional.**  
-**一条命令，把当前 git diff 写成有品味的 PR title + body。无 API Key 也能用；有 Key 再可选 AI。**
+<p align="center">
+  <a href="https://github.com/webywz/diff-vibe/actions/workflows/ci.yml"><img src="https://github.com/webywz/diff-vibe/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://www.npmjs.com/package/@webywz/diff-vibe"><img src="https://img.shields.io/npm/v/@webywz/diff-vibe.svg" alt="npm" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT" /></a>
+</p>
 
-Companion to [vibe-commit](https://github.com/webywz/vibe-commit): one command, the current diff, a review-ready pull request draft.
+<p align="center">
+  <strong>Stylish PR titles and bodies from a git diff. Offline-first. AI-optional.</strong><br/>
+  One command, the current diff, a review-ready pull request draft.
+</p>
 
-[![CI](https://github.com/webywz/diff-vibe/actions/workflows/ci.yml/badge.svg)](https://github.com/webywz/diff-vibe/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@webywz/diff-vibe.svg)](https://www.npmjs.com/package/@webywz/diff-vibe)
-[![license](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+<p align="center">
+  一条命令，把当前 git diff 写成有品味的 PR title + body。<br/>
+  无 API Key 也能用；有 Key 再可选 AI。
+</p>
 
-Package: `@webywz/diff-vibe` · CLI: `diff-vibe` · Node.js 18.18+ · requires `git`
+Companion spirit to [vibe-commit](https://github.com/webywz/vibe-commit): commits there, pull requests here.
+
+与 [vibe-commit](https://github.com/webywz/vibe-commit) 成对：那边写 commit，这边写 PR。
+
+Package: [`@webywz/diff-vibe`](https://www.npmjs.com/package/@webywz/diff-vibe) · CLI: `diff-vibe` · Node.js **18.18+** · requires `git`
 
 ---
 
@@ -70,9 +81,9 @@ npm i -g @webywz/diff-vibe
 npx @webywz/diff-vibe
 ```
 
-Binary name stays `diff-vibe` after install.
+Requires **Node.js 18.18+** and `git`. Package: [`@webywz/diff-vibe`](https://www.npmjs.com/package/@webywz/diff-vibe). Binary: `diff-vibe`.
 
-安装后 CLI 二进制名仍是 `diff-vibe`。
+需要 **Node.js 18.18+** 与 `git`。包名 `@webywz/diff-vibe`，命令仍是 `diff-vibe`。
 
 ---
 
@@ -91,6 +102,18 @@ diff-vibe --update        # edit open PR for this branch via `gh pr edit`
 Default: **staged + unstaged vs `HEAD`** (`git diff HEAD`). For a PR draft, use `--base main` so commits already on the branch are included. Untracked files are invisible until `git add`.
 
 默认对比 HEAD 上的暂存 + 未暂存。写 PR 用 `--base main`，把已提交的 commit 一并纳入。未跟踪文件需先 `git add`。
+
+### Pair with vibe-commit · 与 vibe-commit 成对
+
+```bash
+git add -p
+npx --yes @webywz/vibe-commit --commit
+npx --yes @webywz/diff-vibe@^0.1.6 --base main --create
+```
+
+Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh` snippet live in [`examples/pair-workflow.md`](./examples/pair-workflow.md) and [`examples/gh-pr-create.sh`](./examples/gh-pr-create.sh) — both ship in the npm tarball.
+
+那边写 commit，这边写 PR。完整成对流程与可复制 `gh` 片段见 [`examples/`](./examples/)（随 npm 包一起发布）。
 
 ### Flags · 参数
 
@@ -197,4 +220,5 @@ node dist/cli.js --help
 
 - npm: [@webywz/diff-vibe](https://www.npmjs.com/package/@webywz/diff-vibe)
 - Companion: [vibe-commit](https://github.com/webywz/vibe-commit)
+- Pair workflow: [examples/pair-workflow.md](./examples/pair-workflow.md)
 - License: [MIT](./LICENSE) © webywz

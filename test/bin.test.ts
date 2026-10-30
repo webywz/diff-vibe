@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import {
   mkdirSync,
+  readFileSync,
   rmSync,
   symlinkSync,
 } from "node:fs";
@@ -11,6 +12,9 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
+  version: string;
+};
 
 describe("CLI bin", () => {
   it("runs when argv[1] is a symlink to dist/cli.js (npm .bin / npx)", () => {
@@ -26,7 +30,7 @@ describe("CLI bin", () => {
       const out = execFileSync(process.execPath, [link, "-v"], {
         encoding: "utf8",
       });
-      assert.match(out.trim(), /diff-vibe\s+0\.1\.5/);
+      assert.equal(out.trim(), `diff-vibe ${pkg.version}`);
       assert.notEqual(out.trim(), "");
 
       const help = execFileSync(process.execPath, [link, "--help"], {
