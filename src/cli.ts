@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { copyToClipboard } from "./clipboard.ts";
 import { GitError, inspectDiff } from "./git.ts";
 import { helpText, parseArgs, UsageError } from "./parse-args.ts";
@@ -167,10 +167,15 @@ function readVersion(): string {
 function isDirectRun(): boolean {
   const entry = process.argv[1];
   if (!entry) return false;
+  const self = fileURLToPath(import.meta.url);
   try {
-    return import.meta.url === pathToFileURL(entry).href;
+    // npm/.bin and npx invoke via symlink; compare real paths (align agent-trace / context-diet).
+    return (
+      realpathSync(entry) === self ||
+      realpathSync(entry) === realpathSync(self)
+    );
   } catch {
-    return false;
+    return /(cli\.(js|ts)|diff-vibe)$/.test(entry);
   }
 }
 
