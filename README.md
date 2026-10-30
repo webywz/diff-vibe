@@ -205,6 +205,7 @@ Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh
 | `--vibe <style>` | `calm` \| `punchy` \| `dry` (default: `calm`) |
 | `--locale <locale>` | `en` \| `zh` (default: `en`) · PR title + body language · PR 标题与正文语言 |
 | `--no-ai` | Skip the API even if a key is set · 有 Key 也不走 AI |
+| `--no-color` | Disable ANSI colors in human-readable output (also respects `NO_COLOR` env) · 禁用彩色输出（也支持 `NO_COLOR` 环境变量） |
 | `-h`, `--help` | Help |
 | `-v`, `--version` | Version |
 
@@ -286,9 +287,12 @@ export ANTHROPIC_MODEL=claude-3-5-haiku-latest
 
 export DIFF_VIBE_VIBE=calm                # or VIBE
 export DIFF_VIBE_LOCALE=zh                # or VIBE_LOCALE (default: en)
+export NO_COLOR=1                         # disable ANSI colors (or use --no-color)
 ```
 
 Keys are never required. Huge diffs are truncated before they leave the machine. No key / timeout / 4xx/5xx → silent fallback to the offline heuristic.
+
+Set `NO_COLOR` (any non-empty value) or pass `--no-color` to disable ANSI colors in human-readable output. `--json` output is always plain JSON with no colors.
 
 没 Key、超时、4xx/5xx → 静默回退到离线启发式，仍能给出可用草稿。
 

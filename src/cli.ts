@@ -29,7 +29,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     options = parseArgs(argv);
   } catch (error) {
     if (error instanceof UsageError) {
-      process.stderr.write(`${renderError(error.message)}\n\n${helpText()}`);
+      process.stderr.write(`${renderError(error.message, { noColor: options?.noColor })}\n\n${helpText()}`);
       return 1;
     }
     throw error;
@@ -40,7 +40,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     return 0;
   }
   if (options.version) {
-    process.stdout.write(`${renderVersion(readVersion())}\n`);
+    process.stdout.write(`${renderVersion(readVersion(), { noColor: options.noColor })}\n`);
     return 0;
   }
 
@@ -106,7 +106,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         )}\n`
       : piped || options.titleOnly || options.bodyOnly
         ? textOutput(proposal, mode)
-        : renderProposal(inspected, proposal);
+        : renderProposal(inspected, proposal, { noColor: options.noColor });
 
     if (options.out) {
       // Write to file
@@ -117,7 +117,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
         }
       } catch (err) {
         process.stderr.write(
-          `${renderError(`Failed to write ${options.out}: ${err instanceof Error ? err.message : err}`)}\n`,
+          `${renderError(`Failed to write ${options.out}: ${err instanceof Error ? err.message : err}`, { noColor: options.noColor })}\n`,
         );
         return 1;
       }
@@ -150,9 +150,9 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
             : textOutput(proposal, mode),
       );
       if (!piped && !options.json && !options.quiet) {
-        process.stdout.write(renderCopied(copied));
+        process.stdout.write(renderCopied(copied, { noColor: options.noColor }));
       } else if (!copied) {
-        process.stderr.write(`${renderError("clipboard unavailable")}\n`);
+        process.stderr.write(`${renderError("clipboard unavailable", { noColor: options.noColor })}\n`);
       }
     }
 
@@ -160,7 +160,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       if (piped || options.json || options.titleOnly || options.bodyOnly || options.quiet) {
         process.stderr.write(`${suggestGhPrCreate(proposal.title, proposal.body)}\n`);
       } else {
-        process.stdout.write(renderGhHint(proposal));
+        process.stdout.write(renderGhHint(proposal, { noColor: options.noColor }));
       }
     }
 
@@ -180,7 +180,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
           process.stdout.write(`\n  ${line}\n`);
         }
       } else {
-        process.stderr.write(`${renderError(created.message)}\n`);
+        process.stderr.write(`${renderError(created.message, { noColor: options.noColor })}\n`);
         process.stderr.write(`${created.suggestedCommand}\n`);
         return 1;
       }
@@ -201,7 +201,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
           process.stdout.write(`\n  ${line}\n`);
         }
       } else {
-        process.stderr.write(`${renderError(updated.message)}\n`);
+        process.stderr.write(`${renderError(updated.message, { noColor: options.noColor })}\n`);
         process.stderr.write(`${updated.suggestedCommand}\n`);
         return 1;
       }
@@ -213,7 +213,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       error instanceof GitError || error instanceof Error
         ? error.message
         : "Unexpected error";
-    process.stderr.write(`${renderError(text)}\n`);
+    process.stderr.write(`${renderError(text, { noColor: options.noColor })}\n`);
     return 1;
   }
 }
@@ -255,7 +255,7 @@ async function runSuiteMode(options: import("./types.ts").CliOptions): Promise<n
     const threshold = options.failAbove ?? 0;
     if (result.stats.failed > threshold) {
       process.stderr.write(
-        `${renderError(`Suite failed: ${result.stats.failed} failures (threshold: ${threshold})`)}\n`,
+        `${renderError(`Suite failed: ${result.stats.failed} failures (threshold: ${threshold})`, { noColor: options.noColor })}\n`,
       );
       return 1;
     }
@@ -263,7 +263,7 @@ async function runSuiteMode(options: import("./types.ts").CliOptions): Promise<n
     return 0;
   } catch (error) {
     const text = error instanceof Error ? error.message : "Unexpected error";
-    process.stderr.write(`${renderError(text)}\n`);
+    process.stderr.write(`${renderError(text, { noColor: options.noColor })}\n`);
     return 1;
   }
 }
@@ -301,7 +301,7 @@ if (isDirectRun()) {
     (code) => process.exit(code),
     (error: unknown) => {
       process.stderr.write(
-        `${renderError(error instanceof Error ? error.message : "Unexpected error")}\n`,
+        `${renderError(error instanceof Error ? error.message : "Unexpected error", { noColor: false })}\n`,
       );
       process.exit(1);
     },

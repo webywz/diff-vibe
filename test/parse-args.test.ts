@@ -24,6 +24,7 @@ describe("parseArgs", () => {
     assert.equal(options.update, false);
     assert.equal(options.draft, false);
     assert.equal(options.noAi, false);
+    assert.equal(options.noColor, false);
     assert.equal(options.base, undefined);
   });
 
@@ -185,5 +186,37 @@ describe("parseLocale", () => {
     assert.throws(() => parseLocale("fr"), UsageError);
     assert.throws(() => parseLocale(""), UsageError);
     assert.throws(() => parseLocale(undefined), UsageError);
+  });
+});
+
+describe("parseArgs --no-color", () => {
+  it("parses --no-color flag", () => {
+    const options = parseArgs(["--no-color"], {});
+    assert.equal(options.noColor, true);
+  });
+
+  it("respects NO_COLOR environment variable", () => {
+    const withNoColor = parseArgs([], { NO_COLOR: "1" });
+    assert.equal(withNoColor.noColor, true);
+
+    const withNoColorEmpty = parseArgs([], { NO_COLOR: "true" });
+    assert.equal(withNoColorEmpty.noColor, true);
+  });
+
+  it("does not enable noColor when NO_COLOR is unset", () => {
+    const options = parseArgs([], {});
+    assert.equal(options.noColor, false);
+  });
+
+  it("--no-color flag overrides NO_COLOR environment variable", () => {
+    const options = parseArgs(["--no-color"], { NO_COLOR: undefined });
+    assert.equal(options.noColor, true);
+  });
+
+  it("combines with other flags", () => {
+    const options = parseArgs(["--no-color", "--json", "--no-ai"], {});
+    assert.equal(options.noColor, true);
+    assert.equal(options.json, true);
+    assert.equal(options.noAi, true);
   });
 });

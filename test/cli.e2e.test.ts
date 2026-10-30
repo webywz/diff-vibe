@@ -267,6 +267,50 @@ describe("cli e2e", () => {
     assert.match(version.stdout, /diff-vibe \d+\.\d+\.\d+/);
   });
 
+  it("disables colors with --no-color flag", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const withColor = run(cwd, ["--no-ai"], { NO_COLOR: "" });
+    const withoutColor = run(cwd, ["--no-ai", "--no-color"], { NO_COLOR: "" });
+    
+    assert.equal(withColor.status, 0);
+    assert.equal(withoutColor.status, 0);
+    
+    // Output with --no-color should not contain ANSI escape codes
+    assert.equal(withoutColor.stdout.includes("\x1b["), false, "should not contain ANSI codes");
+    assert.match(withoutColor.stdout, /feat\(auth\):/);
+    assert.match(withoutColor.stdout, /## Summary/);
+  });
+
+  it("disables colors with NO_COLOR environment variable", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    const result = run(cwd, ["--no-ai"], { NO_COLOR: "1" });
+    
+    assert.equal(result.status, 0);
+    assert.equal(result.stdout.includes("\x1b["), false, "should not contain ANSI codes with NO_COLOR=1");
+  });
+
+  it("keeps JSON output clean regardless of --no-color", () => {
+    const cwd = makeRepo();
+    repos.push(cwd);
+    
+    const withColor = run(cwd, ["--no-ai", "--json"], { NO_COLOR: "" });
+    const withoutColor = run(cwd, ["--no-ai", "--json", "--no-color"]);
+    
+    assert.equal(withColor.status, 0);
+    assert.equal(withoutColor.status, 0);
+    
+    // Both should be valid JSON without ANSI codes
+    const payload1 = JSON.parse(withColor.stdout) as { title: string };
+    const payload2 = JSON.parse(withoutColor.stdout) as { title: string };
+    
+    assert.equal(withColor.stdout.includes("\x1b["), false);
+    assert.equal(withoutColor.stdout.includes("\x1b["), false);
+    assert.match(payload1.title, /^(feat|fix|docs|chore|refactor)\b/);
+    assert.match(payload2.title, /^(feat|fix|docs|chore|refactor)\b/);
+  });
+
   it("writes report to file with --out (single mode)", () => {
     const cwd = makeRepo();
     repos.push(cwd);
