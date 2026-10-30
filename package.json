@@ -1,6 +1,6 @@
 {
   "name": "@webywz/diff-vibe",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Turn a git diff into a sharp PR title and markdown body. Offline-first, AI-optional.",
   "keywords": [
     "git",
