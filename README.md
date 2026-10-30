@@ -38,7 +38,7 @@ $ diff-vibe
     ## Test plan
     - Hit the happy path once — unit tests if you have them, otherwise a manual pass.
 
-  next  diff-vibe --copy    or  diff-vibe --open
+  next  diff-vibe --copy    or  diff-vibe --create
 ```
 
 Pipe-friendly when stdout is not a TTY:
@@ -71,7 +71,9 @@ npx @webywz/diff-vibe               # 一次性运行
 diff-vibe                 # staged + unstaged vs HEAD
 diff-vibe --base main     # vs merge-base of main (typical PR range)
 diff-vibe --copy          # also copy title + body when a clipboard exists
-diff-vibe --open          # print a suggested `gh pr create` command
+diff-vibe --open          # print a suggested `gh pr create` command (does not post)
+diff-vibe --create        # run `gh pr create` with the proposal (needs gh)
+diff-vibe --create --draft
 ```
 
 | Flag | What it does · 作用 |
@@ -82,6 +84,8 @@ diff-vibe --open          # print a suggested `gh pr create` command
 | `--json` | Machine-readable proposal |
 | `--copy` | Copy output to the clipboard when available · 能复制就复制 |
 | `--open` | Print a suggested `gh pr create …` command (does not post) |
+| `--create` | Run `gh pr create` with the proposal · 真正开 PR（需本机有 `gh`） |
+| `--draft` | With `--create`, open a draft PR · 配合 `--create` 开草稿 |
 | `--vibe <style>` | `calm` \| `punchy` \| `dry` (default: `calm`) |
 | `--no-ai` | Skip the API even if a key is set |
 | `-h`, `--help` | Help |
@@ -110,7 +114,7 @@ diff-vibe --open          # print a suggested `gh pr create` command
    - `fix` / `bug` / `crash` in comments → `fix`
    - new files / `export function` → `feat`
 3. If `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` is set, ask the model and **fall back to the heuristic** on any failure.
-4. Print a proposal. `--open` only prints a `gh pr create` command — it never talks to the GitHub API.
+4. Print a proposal. `--open` only prints a `gh pr create` command. `--create` (opt-in) shells out to `gh pr create` — nothing is posted without that flag.
 
 启发式始终可用；配置了 API Key 才走模型，失败自动回退。
 

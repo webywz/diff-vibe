@@ -15,6 +15,8 @@ describe("parseArgs", () => {
     assert.equal(options.json, false);
     assert.equal(options.copy, false);
     assert.equal(options.open, false);
+    assert.equal(options.create, false);
+    assert.equal(options.draft, false);
     assert.equal(options.noAi, false);
     assert.equal(options.base, undefined);
   });
@@ -27,6 +29,8 @@ describe("parseArgs", () => {
         "--json",
         "--copy",
         "--open",
+        "--create",
+        "--draft",
         "--vibe",
         "punchy",
         "--no-ai",
@@ -40,6 +44,8 @@ describe("parseArgs", () => {
         json: options.json,
         copy: options.copy,
         open: options.open,
+        create: options.create,
+        draft: options.draft,
         vibe: options.vibe,
         noAi: options.noAi,
       },
@@ -49,6 +55,8 @@ describe("parseArgs", () => {
         json: true,
         copy: true,
         open: true,
+        create: true,
+        draft: true,
         vibe: "punchy",
         noAi: true,
       },
@@ -74,6 +82,7 @@ describe("parseArgs", () => {
       () => parseArgs(["--title-only", "--body-only"], {}),
       UsageError,
     );
+    assert.throws(() => parseArgs(["--draft"], {}), UsageError);
   });
 });
 

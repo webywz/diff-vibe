@@ -15,6 +15,7 @@ import {
   textOutput,
 } from "./render.ts";
 import { formatPr, suggestGhPrCreate } from "./format.ts";
+import { createPrWithGh } from "./gh.ts";
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
   let options;
@@ -88,11 +89,33 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       }
     }
 
-    if (options.open) {
+    if (options.open && !options.create) {
       if (piped || options.json || options.titleOnly || options.bodyOnly) {
         process.stderr.write(`${suggestGhPrCreate(proposal.title, proposal.body)}\n`);
       } else {
         process.stdout.write(renderGhHint(proposal));
+      }
+    }
+
+    if (options.create) {
+      const created = createPrWithGh({
+        title: proposal.title,
+        body: proposal.body,
+        draft: options.draft,
+      });
+      if (created.ok) {
+        const line = created.url
+          ? `created  ${created.url}`
+          : `created  ${created.message}`;
+        if (piped || options.json || options.titleOnly || options.bodyOnly) {
+          process.stderr.write(`${line}\n`);
+        } else {
+          process.stdout.write(`\n  ${line}\n`);
+        }
+      } else {
+        process.stderr.write(`${renderError(created.message)}\n`);
+        process.stderr.write(`${created.suggestedCommand}\n`);
+        return 1;
       }
     }
 

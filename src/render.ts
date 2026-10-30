@@ -38,7 +38,7 @@ export function renderProposal(
     "",
     ...indent(formatted),
     "",
-    `  ${pc.dim("next")}  diff-vibe --copy    ${pc.dim("or")}  diff-vibe --open`,
+    `  ${pc.dim("next")}  diff-vibe --copy    ${pc.dim("or")}  diff-vibe --create`,
     "",
   ];
   return lines.join("\n");

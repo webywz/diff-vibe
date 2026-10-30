@@ -29,6 +29,8 @@ Examples
   diff-vibe --base main --vibe punchy
   diff-vibe --json
   diff-vibe --open
+  diff-vibe --create
+  diff-vibe --create --draft
 `;
 
 export function defaultVibeFromEnv(
@@ -48,6 +50,8 @@ export function parseArgs(
     json: false,
     copy: false,
     open: false,
+    create: false,
+    draft: false,
     vibe: defaultVibeFromEnv(env),
     noAi: false,
     help: false,
@@ -86,6 +90,14 @@ export function parseArgs(
       options.open = true;
       continue;
     }
+    if (arg === "--create") {
+      options.create = true;
+      continue;
+    }
+    if (arg === "--draft") {
+      options.draft = true;
+      continue;
+    }
     if (arg === "--no-ai") {
       options.noAi = true;
       continue;
@@ -119,6 +131,9 @@ export function parseArgs(
 
   if (options.titleOnly && options.bodyOnly) {
     throw new UsageError("Use only one of --title-only or --body-only");
+  }
+  if (options.draft && !options.create) {
+    throw new UsageError("--draft requires --create");
   }
 
   return options;
