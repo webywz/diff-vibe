@@ -1,4 +1,14 @@
-import { VIBES, LOCALES, type CliOptions, type Vibe, type Locale } from "./types.ts";
+import {
+  VIBES,
+  LOCALES,
+  HTML_THEMES,
+  DEFAULT_HTML_THEME,
+  isHtmlTheme,
+  type CliOptions,
+  type Vibe,
+  type Locale,
+  type HtmlTheme,
+} from "./types.ts";
 import { resolveLocale, resolveVibe } from "./config.ts";
 
 const HELP = `diff-vibe — stylish PR titles + bodies from a git diff, offline-first
@@ -21,6 +31,8 @@ Options · 参数
   --json                    Print a machine-readable proposal · 机器可读
   --html [path]             Self-contained HTML report (stdout, or write to path; offline, no CDN)
                             自包含 HTML 报告（stdout，或写入路径；离线，无 CDN）
+  --theme <name>            HTML palette: ember (default), fog, midnight, paper
+                            HTML 配色：ember（默认，与 0.1.17 相同）、fog、midnight、paper
   --out <file>              Write to file; with --json also prints to stdout
                             写入文件；配合 --json 时也打印到 stdout
   --github                  Emit GitHub Actions annotations (::notice/warning/error)
@@ -57,18 +69,21 @@ title/summary/type/breaking/engine/base/findings are written when GITHUB_OUTPUT
 is set (findings = changes.length). A short Markdown job summary is appended when
 GITHUB_STEP_SUMMARY is set. --quiet hides the pretty report only.
 --html and --json cannot share stdout; pick one primary export.
+--theme only restyles --html (ember = 0.1.17 look). Pretty / JSON / GitHub / scoring unchanged.
 
 配合 --github 时注解走 stdout（与 --json / --html 联用则走 stderr，保持 JSON 干净）。
 有 GITHUB_OUTPUT 时写入 title/summary 等字段；有 GITHUB_STEP_SUMMARY 时追加 Job Summary。
 --quiet 只隐藏漂亮终端报告。
 --html 与 --json 不能同时占用 stdout；二选一。
+--theme 只改 --html 配色（ember = 0.1.17 外观）。漂亮终端 / JSON / GitHub / 打分不变。
 
 Examples · 示例
   diff-vibe
   diff-vibe --base main --vibe punchy
   diff-vibe --json
   diff-vibe --html
-  diff-vibe --html report.html
+  diff-vibe --html --theme fog
+  diff-vibe --html report.html --theme midnight
   diff-vibe --github --quiet --base main
   diff-vibe --github --json --max-annotations 10
   diff-vibe --open
@@ -108,6 +123,7 @@ export function parseArgs(
     help: false,
     version: false,
     failAbove: 0,
+    theme: DEFAULT_HTML_THEME,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -181,6 +197,11 @@ export function parseArgs(
       const value = arg.includes("=") ? arg.slice("--out=".length) : argv[++i];
       if (!value?.trim()) throw new UsageError("Missing value for --out");
       options.out = value;
+      continue;
+    }
+    if (arg === "--theme" || arg.startsWith("--theme=")) {
+      const value = arg.includes("=") ? arg.slice("--theme=".length) : argv[++i];
+      options.theme = parseTheme(value);
       continue;
     }
     if (arg === "--html") {
@@ -297,6 +318,17 @@ export function parseLocale(value: string | undefined): Locale {
     throw new UsageError(`Invalid --locale "${value}". Use: ${LOCALES.join(", ")}`);
   }
   return raw as Locale;
+}
+
+export function parseTheme(value: string | undefined): HtmlTheme {
+  const raw = value?.trim().toLowerCase();
+  if (!raw) throw new UsageError("Missing value for --theme");
+  if (!isHtmlTheme(raw)) {
+    throw new UsageError(
+      `Invalid --theme "${value}". Use: ${HTML_THEMES.join(", ")}`,
+    );
+  }
+  return raw;
 }
 
 export function parseFailAbove(value: string | undefined): number {
