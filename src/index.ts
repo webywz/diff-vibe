@@ -22,7 +22,7 @@ export {
   inferType,
   proposeHeuristic,
 } from "./heuristic.ts";
-export { helpText, parseArgs, UsageError } from "./parse-args.ts";
+export { helpText, parseArgs, parseTheme, UsageError } from "./parse-args.ts";
 export {
   annotation,
   appendGitHubJobOutput,
@@ -33,7 +33,7 @@ export {
   formatGitHubStepSummary,
   proposalAnnotationType,
 } from "./github.ts";
-export { escapeHtml, formatHtml } from "./html.ts";
+export { escapeHtml, formatHtml, THEME_TOKENS } from "./html.ts";
 export { assembleDiff, parseUnifiedDiff } from "./parse-diff.ts";
 export { proposePr } from "./propose.ts";
 export { runSuite } from "./suite.ts";
@@ -46,8 +46,15 @@ export type {
   ProposeOptions,
   DiffFile,
   Vibe,
+  HtmlTheme,
   SuiteResult,
   SuiteItemResult,
   SuiteStats,
 } from "./types.ts";
-export { COMMIT_TYPES, VIBES } from "./types.ts";
+export {
+  COMMIT_TYPES,
+  VIBES,
+  HTML_THEMES,
+  DEFAULT_HTML_THEME,
+  isHtmlTheme,
+} from "./types.ts";
