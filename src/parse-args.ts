@@ -17,6 +17,8 @@ const HELP = `diff-vibe — stylish PR titles + bodies from a git diff, offline-
 Usage · 用法
   diff-vibe [options]                    Single-run mode · 单次模式
   diff-vibe --suite <glob|dir> [options] Batch mode · 批处理模式
+  diff-vibe --list-themes
+  diff-vibe --list-themes --json
 
 Options · 参数
   --base [ref]              Diff vs merge-base of <ref> (default ref: main/master)
@@ -28,11 +30,14 @@ Options · 参数
                             配合 --suite：失败数 > n 时 exit 非 0（默认 0）
   --title-only              Print the title only · 只打印标题
   --body-only               Print the markdown body only · 只打印正文
-  --json                    Print a machine-readable proposal · 机器可读
+  --json                    Print a machine-readable proposal, or theme list with --list-themes
+                            机器可读提案；配合 --list-themes 则输出主题名 JSON 数组
   --html [path]             Self-contained HTML report (stdout, or write to path; offline, no CDN)
                             自包含 HTML 报告（stdout，或写入路径；离线，无 CDN）
   --theme <name>            HTML palette: ember (default), fog, midnight, paper, aurora
                             HTML 配色：ember（默认，与 0.1.17 相同）、fog、midnight、paper、aurora
+  --list-themes             Print available HTML theme names (one per line; --json: JSON array)
+                            打印可用 HTML 主题名（每行一个；加 --json 则输出 JSON 数组）
   --out <file>              Write to file; with --json also prints to stdout
                             写入文件；配合 --json 时也打印到 stdout
   --github                  Emit GitHub Actions annotations (::notice/warning/error)
@@ -70,12 +75,14 @@ is set (findings = changes.length). A short Markdown job summary is appended whe
 GITHUB_STEP_SUMMARY is set. --quiet hides the pretty report only.
 --html and --json cannot share stdout; pick one primary export.
 --theme only restyles --html (ember = 0.1.17 look). Pretty / JSON / GitHub / scoring unchanged.
+--list-themes prints HTML palette names (same order as --theme); combine with --json for a JSON array.
 
 配合 --github 时注解走 stdout（与 --json / --html 联用则走 stderr，保持 JSON 干净）。
 有 GITHUB_OUTPUT 时写入 title/summary 等字段；有 GITHUB_STEP_SUMMARY 时追加 Job Summary。
 --quiet 只隐藏漂亮终端报告。
 --html 与 --json 不能同时占用 stdout；二选一。
 --theme 只改 --html 配色（ember = 0.1.17 外观）。漂亮终端 / JSON / GitHub / 打分不变。
+--list-themes 打印 HTML 配色名（顺序与 --theme 一致）；可加 --json 输出 JSON 数组。
 
 Examples · 示例
   diff-vibe
@@ -85,6 +92,8 @@ Examples · 示例
   diff-vibe --html --theme fog
   diff-vibe --html report.html --theme midnight
   diff-vibe --html --theme aurora
+  diff-vibe --list-themes
+  diff-vibe --list-themes --json
   diff-vibe --github --quiet --base main
   diff-vibe --github --json --max-annotations 10
   diff-vibe --open
@@ -125,6 +134,7 @@ export function parseArgs(
     version: false,
     failAbove: 0,
     theme: DEFAULT_HTML_THEME,
+    listThemes: false,
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -200,6 +210,10 @@ export function parseArgs(
       options.out = value;
       continue;
     }
+    if (arg === "--list-themes") {
+      options.listThemes = true;
+      continue;
+    }
     if (arg === "--theme" || arg.startsWith("--theme=")) {
       const value = arg.includes("=") ? arg.slice("--theme=".length) : argv[++i];
       options.theme = parseTheme(value);
@@ -261,6 +275,10 @@ export function parseArgs(
       throw new UsageError(`Unknown option: ${arg}`);
     }
     throw new UsageError(`Unexpected argument: ${arg}`);
+  }
+
+  if (options.listThemes) {
+    return options;
   }
 
   if (options.titleOnly && options.bodyOnly) {

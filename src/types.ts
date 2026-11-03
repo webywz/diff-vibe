@@ -97,6 +97,11 @@ export interface CliOptions {
   html?: string | true;
   /** HTML report palette only; ignored by pretty / JSON / GitHub / suite. */
   theme: HtmlTheme;
+  /**
+   * Print available HTML theme names and exit (no git diff required).
+   * Combine with `--json` for a JSON array.
+   */
+  listThemes: boolean;
   vibe: Vibe;
   locale: Locale;
   noAi: boolean;

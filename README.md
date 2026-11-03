@@ -33,7 +33,7 @@ Package: [`@webywz/diff-vibe`](https://www.npmjs.com/package/@webywz/diff-vibe) 
 | Vibes | `calm` · `punchy` · `dry` | 三种文风 |
 | Ship | Print, copy, suggest `gh pr create`, or `--create` / `--update` / `--draft` | 打印、复制、建议命令，或开/更新 PR |
 | Actions | `--github` annotations + job outputs + step summary; `--quiet` / `--max-annotations` | Actions 注解 + Job 输出 + Summary；可静音与限条 |
-| HTML | `--html [path]` self-contained offline report; `--theme` palettes `ember` (default) · `fog` · `midnight` · `paper` · `aurora` | `--html [path]` 离线自包含报告；`--theme` 配色 `ember`（默认）· `fog` · `midnight` · `paper` · `aurora` |
+| HTML | `--html [path]` self-contained offline report; `--theme` palettes `ember` (default) · `fog` · `midnight` · `paper` · `aurora`; `--list-themes` | `--html [path]` 离线自包含报告；`--theme` 配色 `ember`（默认）· `fog` · `midnight` · `paper` · `aurora`；`--list-themes` 列出主题 |
 
 ---
 
@@ -102,6 +102,8 @@ diff-vibe --html          # self-contained HTML report on stdout (ember)
 diff-vibe --html --theme fog  # same report, fog palette
 diff-vibe --html --theme aurora  # polar-night / northern-lights palette
 diff-vibe --html report.html --theme midnight  # write HTML to file (stdout empty)
+diff-vibe --list-themes           # print HTML theme names (one per line)
+diff-vibe --list-themes --json    # same names as a JSON array
 diff-vibe --copy          # copy title + body when a clipboard exists
 diff-vibe --open          # print a suggested `gh pr create` (does not post)
 diff-vibe --create        # run `gh pr create` (needs `gh`)
@@ -197,9 +199,10 @@ Commits there · PRs here. Full walkthrough (EN/中文) and a copy-pasteable `gh
 | `--fail-above <n>` | With `--suite`: exit non-zero if failed count > n (default: 0) · 配合 `--suite`：失败数 > n 时 exit 非 0 |
 | `--title-only` | Title only · 只打印标题 |
 | `--body-only` | Markdown body only · 只打印正文 |
-| `--json` | Machine-readable proposal · 机器可读 |
+| `--json` | Machine-readable proposal, or theme list with `--list-themes` · 机器可读提案；配合 `--list-themes` 则输出主题名 JSON 数组 |
 | `--html [path]` | Self-contained HTML report (stdout, or write to path; offline, no CDN). Cannot share stdout with `--json` · 自包含 HTML 报告（stdout 或写入路径；离线、无 CDN）。不能与 `--json` 同时占用 stdout |
 | `--theme <name>` | HTML palette only: `ember` (default, 0.1.17 look), `fog`, `midnight`, `paper`, `aurora` · 仅 HTML 配色：`ember`（默认，与 0.1.17 相同）、`fog`、`midnight`、`paper`、`aurora` |
+| `--list-themes` | Print available HTML theme names (one per line; `--json`: JSON array). Does not require a git diff · 打印可用 HTML 主题名（每行一个；加 `--json` 则输出 JSON 数组）。不需要 git diff |
 | `--out <file>` | Write report to file; with `--json`, write to both file and stdout · 写报告到文件；配合 `--json` 时同时写文件与 stdout |
 | `--github` | Emit GitHub Actions `::notice` / `::warning` / `::error` annotations; write `GITHUB_OUTPUT` + `GITHUB_STEP_SUMMARY` when set · 输出 Actions 注解，并在环境变量存在时写 Job 输出与 Summary |
 | `--quiet` | Suppress the pretty terminal report; `--json` / `--github` still emit · 抑制漂亮终端报告 |

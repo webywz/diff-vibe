@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { after, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { HTML_THEMES } from "../src/types.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const cli = join(root, "src", "cli.ts");
@@ -183,6 +184,14 @@ describe("cli e2e", () => {
     assert.match(fail.stderr, /Not a git repository/);
   });
 
+  it("--list-themes works outside a git repository", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "diff-vibe-list-themes-nongit-"));
+    repos.push(cwd);
+    const result = run(cwd, ["--list-themes"]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout, `${HTML_THEMES.join("\n")}\n`);
+  });
+
 
   it("emits GitHub Actions annotations with --github --quiet", () => {
     const cwd = makeRepo();
@@ -262,6 +271,7 @@ describe("cli e2e", () => {
     const help = run(cwd, ["--help"]);
     assert.equal(help.status, 0);
     assert.match(help.stdout, /Usage/);
+    assert.match(help.stdout, /--list-themes/);
     const version = run(cwd, ["--version"]);
     assert.equal(version.status, 0);
     assert.match(version.stdout, /diff-vibe \d+\.\d+\.\d+/);

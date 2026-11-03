@@ -23,6 +23,7 @@ import { formatPr, suggestGhPrCreate } from "./format.ts";
 import { createPrWithGh, updatePrWithGh } from "./gh.ts";
 import { formatHtml } from "./html.ts";
 import { runSuite } from "./suite.ts";
+import { HTML_THEMES } from "./types.ts";
 
 export async function main(argv = process.argv.slice(2)): Promise<number> {
   let options;
@@ -42,6 +43,14 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
   }
   if (options.version) {
     process.stdout.write(`${renderVersion(readVersion(), { noColor: options.noColor })}\n`);
+    return 0;
+  }
+  if (options.listThemes) {
+    if (options.json) {
+      process.stdout.write(`${JSON.stringify([...HTML_THEMES])}\n`);
+    } else {
+      process.stdout.write(`${HTML_THEMES.join("\n")}\n`);
+    }
     return 0;
   }
 
