@@ -31,8 +31,8 @@ Options · 参数
   --json                    Print a machine-readable proposal · 机器可读
   --html [path]             Self-contained HTML report (stdout, or write to path; offline, no CDN)
                             自包含 HTML 报告（stdout，或写入路径；离线，无 CDN）
-  --theme <name>            HTML palette: ember (default), fog, midnight, paper
-                            HTML 配色：ember（默认，与 0.1.17 相同）、fog、midnight、paper
+  --theme <name>            HTML palette: ember (default), fog, midnight, paper, aurora
+                            HTML 配色：ember（默认，与 0.1.17 相同）、fog、midnight、paper、aurora
   --out <file>              Write to file; with --json also prints to stdout
                             写入文件；配合 --json 时也打印到 stdout
   --github                  Emit GitHub Actions annotations (::notice/warning/error)
@@ -84,6 +84,7 @@ Examples · 示例
   diff-vibe --html
   diff-vibe --html --theme fog
   diff-vibe --html report.html --theme midnight
+  diff-vibe --html --theme aurora
   diff-vibe --github --quiet --base main
   diff-vibe --github --json --max-annotations 10
   diff-vibe --open

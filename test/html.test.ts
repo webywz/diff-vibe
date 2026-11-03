@@ -96,6 +96,7 @@ describe("escapeHtml / formatHtml", () => {
       fog: formatHtml(sampleInspected(), sampleProposal(), { theme: "fog" }),
       midnight: formatHtml(sampleInspected(), sampleProposal(), { theme: "midnight" }),
       paper: formatHtml(sampleInspected(), sampleProposal(), { theme: "paper" }),
+      aurora: formatHtml(sampleInspected(), sampleProposal(), { theme: "aurora" }),
     };
     const bgs = HTML_THEMES.map((name) => THEME_TOKENS[name]["--bg"]);
     assert.equal(new Set(bgs).size, HTML_THEMES.length);
@@ -109,12 +110,18 @@ describe("escapeHtml / formatHtml", () => {
     assert.match(css.fog, /var\(--text-soft\)/);
     assert.match(css.midnight, /var\(--hot-border\)/);
     assert.match(css.paper, /var\(--text-soft\)/);
+    assert.match(css.aurora, /var\(--text-soft\)/);
+    assert.match(css.aurora, /--bg: #0b2744;/);
     assert.notEqual(css.ember, css.fog);
     assert.notEqual(css.ember, css.midnight);
     assert.notEqual(css.ember, css.paper);
+    assert.notEqual(css.ember, css.aurora);
     assert.notEqual(css.fog, css.midnight);
     assert.notEqual(css.fog, css.paper);
+    assert.notEqual(css.fog, css.aurora);
     assert.notEqual(css.midnight, css.paper);
+    assert.notEqual(css.midnight, css.aurora);
+    assert.notEqual(css.paper, css.aurora);
   });
 
   it("uses zh labels when locale is zh", () => {
@@ -207,6 +214,7 @@ describe("--html CLI", () => {
     assert.match(help.stdout, /fog/);
     assert.match(help.stdout, /midnight/);
     assert.match(help.stdout, /paper/);
+    assert.match(help.stdout, /aurora/);
   });
 
   it("defaults to ember CSS and accepts --theme ember", () => {
@@ -244,7 +252,7 @@ describe("--html CLI", () => {
     const result = run(cwd, ["--no-ai", "--html", "--theme", "solar"]);
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Invalid --theme/);
-    assert.match(result.stderr, /ember, fog, midnight, paper/);
+    assert.match(result.stderr, /ember, fog, midnight, paper, aurora/);
     assert.doesNotMatch(result.stdout, /<!DOCTYPE html>/i);
   });
 
